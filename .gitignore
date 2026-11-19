@@ -1,0 +1,20 @@
+# Node
+node_modules/
+dist/
+build/
+.cache/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Temporary / Scratch
+mattpocock-skills-temp/
+.scratch/tmp/
+*.tmp
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
