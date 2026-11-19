@@ -19,6 +19,7 @@ Full architecture, domain model, and UI specification for an offline-first (Loca
 ## Decisions so far
 
 <!-- the index: one line per closed ticket, enough to judge relevance, then zoom the link for the detail the ticket holds -->
+- [01: Progression and XP Leveling Curve](issues/01-progression-formula.md) — High-density power curve ($L = 1 + \lfloor h^{0.6} \times 3.0 \rfloor$) with Greek Pantheon tiers (Mortal → Hero → Demigod → Titan → Olympian → God at 100+ lvl/350h) and custom quests awarding XP minutes. (Prototype: [prototypes/01-progression-formula/index.html](../../prototypes/01-progression-formula/index.html)).
 - [02: Dexie.js Schema and JSON Serialization](issues/02-dexie-schema-and-export.md) — Dexie v4+ schema established using client UUIDs, compound indexes (`[activityId+timestamp]`, `[status+dueDate]`), atomic write transactions for denormalized totals, and lossless backup/restore via `dexie-export-import` with replace/merge conflict modes. (Research: [docs/research/02-dexie-schema-and-export.md](../../docs/research/02-dexie-schema-and-export.md)).
 
 ## Not yet specified
