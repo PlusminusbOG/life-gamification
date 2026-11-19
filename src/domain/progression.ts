@@ -47,3 +47,57 @@ export function getLevelProgress(totalMinutes: number): LevelProgress {
     progressPercent,
   };
 }
+
+export function getPantheonTier(level: number): {
+  tier: import('./types').PantheonTier;
+  title: string;
+  minLevel: number;
+  maxLevel: number;
+} {
+  if (level >= 100) {
+    return {
+      tier: 'Ascendant God',
+      title: 'Ruler of Olympus',
+      minLevel: 100,
+      maxLevel: Infinity,
+    };
+  }
+  if (level >= 81) {
+    return {
+      tier: 'Olympian',
+      title: 'Wisdom of Athena',
+      minLevel: 81,
+      maxLevel: 99,
+    };
+  }
+  if (level >= 56) {
+    return {
+      tier: 'Titan of Will',
+      title: 'Bearer of the Heavens',
+      minLevel: 56,
+      maxLevel: 80,
+    };
+  }
+  if (level >= 31) {
+    return {
+      tier: 'Demigod',
+      title: 'Chosen of the Oracle',
+      minLevel: 31,
+      maxLevel: 55,
+    };
+  }
+  if (level >= 11) {
+    return {
+      tier: 'Hero of Hellas',
+      title: 'Argonaut',
+      minLevel: 11,
+      maxLevel: 30,
+    };
+  }
+  return {
+    tier: 'Mortal',
+    title: 'Wanderer of Ithaca',
+    minLevel: 1,
+    maxLevel: 10,
+  };
+}

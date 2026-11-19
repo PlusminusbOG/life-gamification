@@ -1,5 +1,6 @@
 import { Shield, Hourglass, Sparkles, Award } from 'lucide-react';
 import type { UserProfile } from '../domain/types';
+import { calculateLevel, getPantheonTier } from '../domain/progression';
 
 interface HeaderProps {
   profile?: UserProfile;
@@ -8,37 +9,26 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ profile, totalActivities }) => {
   const totalHours = profile?.totalHours ?? 0;
+  const totalMinutes = profile?.totalMinutes ?? Math.round(totalHours * 60);
+  const heroLevel = calculateLevel(totalMinutes);
+  const tierInfo = getPantheonTier(heroLevel);
 
-  // Derive Pantheon Tier based on total hours as per spec:
-  // Mortal (0-8h), Hero of Hellas (8-45h), Demigod (45-125h), Titan of Will (125-230h), Olympian (230-350h), Ascendant God (350h+)
-  let tierName = 'Mortal';
-  let tierTitle = 'Wanderer of Ithaca';
   let tierColor = 'text-amber-300';
   let tierBorder = 'border-amber-500/30';
 
-  if (totalHours >= 350) {
-    tierName = 'Ascendant God';
-    tierTitle = 'Ruler of Olympus';
+  if (tierInfo.tier === 'Ascendant God') {
     tierColor = 'text-yellow-300 animate-pulse';
     tierBorder = 'border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.3)]';
-  } else if (totalHours >= 230) {
-    tierName = 'Olympian';
-    tierTitle = 'Wisdom of Athena';
+  } else if (tierInfo.tier === 'Olympian') {
     tierColor = 'text-cyan-300';
     tierBorder = 'border-cyan-500/40';
-  } else if (totalHours >= 125) {
-    tierName = 'Titan of Will';
-    tierTitle = 'Bearer of the Heavens';
+  } else if (tierInfo.tier === 'Titan of Will') {
     tierColor = 'text-purple-300';
     tierBorder = 'border-purple-500/40';
-  } else if (totalHours >= 45) {
-    tierName = 'Demigod';
-    tierTitle = 'Chosen of the Oracle';
+  } else if (tierInfo.tier === 'Demigod') {
     tierColor = 'text-indigo-300';
     tierBorder = 'border-indigo-500/40';
-  } else if (totalHours >= 8) {
-    tierName = 'Hero of Hellas';
-    tierTitle = 'Argonaut';
+  } else if (tierInfo.tier === 'Hero of Hellas') {
     tierColor = 'text-amber-400';
     tierBorder = 'border-amber-500/40';
   }
@@ -57,12 +47,14 @@ export const Header: React.FC<HeaderProps> = ({ profile, totalActivities }) => {
                 {profile?.name ?? 'Hero of Hellas'}
               </h1>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border bg-slate-800/80 ${tierColor} ${tierBorder}`}>
-                {tierName}
+                {tierInfo.tier}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 flex items-center gap-1.5 mt-0.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-400/80" />
-              <span>{tierTitle}</span>
+              <span>{tierInfo.title}</span>
+              <span className="text-slate-600">•</span>
+              <span className="font-mono text-amber-400/90 font-semibold">Hero Lvl {heroLevel}</span>
               <span className="text-slate-600">•</span>
               <span>{totalActivities} Active {totalActivities === 1 ? 'Pursuit' : 'Pursuits'}</span>
             </p>

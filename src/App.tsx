@@ -30,7 +30,12 @@ export function App() {
     await gameService.createActivity(input);
   };
 
-  const handleLogTime = async (input: { activityId: string; durationMinutes: number; notes?: string }) => {
+  const handleLogTime = async (input: {
+    activityId: string;
+    durationMinutes: number;
+    notes?: string;
+    timestamp?: number;
+  }) => {
     await gameService.logTime(input);
   };
 
@@ -70,7 +75,7 @@ export function App() {
             </div>
             <h3 className="text-lg font-bold text-slate-200">No Pursuits Created Yet</h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-6">
-              Create your first activity (e.g. Reading, Running, Coding, Guitar) to begin recording time and unlocking mythic Pantheon ranks.
+              Create your first activity (e.g. Reading, Running, Coding, Guitar) to begin recording time and unlocking mythic Pantheon tiers.
             </p>
             <button
               onClick={() => setIsCreateOpen(true)}

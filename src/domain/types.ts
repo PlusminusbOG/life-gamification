@@ -26,9 +26,25 @@ export interface TimeLog {
 export interface UserProfile {
   id: string; // Singleton key: 'me'
   name: string; // Hero name
+  totalMinutes: number; // Cumulative all-time hero minutes (never decreases, prevents rounding drift)
   totalHours: number; // Cumulative all-time hero hours (never decreases)
   createdAt: number; // Epoch ms
   updatedAt: number; // Epoch ms
+}
+
+export type PantheonTier =
+  | 'Mortal'
+  | 'Hero of Hellas'
+  | 'Demigod'
+  | 'Titan of Will'
+  | 'Olympian'
+  | 'Ascendant God';
+
+export interface PantheonTierInfo {
+  tier: PantheonTier;
+  title: string;
+  minLevel: number;
+  maxLevel: number;
 }
 
 export interface HeroState {

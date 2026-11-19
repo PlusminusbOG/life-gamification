@@ -13,7 +13,12 @@ export interface GameEngineService {
   createActivity(input: CreateActivityInput): Promise<Activity>;
   getActivities(): Promise<Activity[]>;
   getActivity(id: string): Promise<Activity | undefined>;
-  logTime(input: LogTimeInput): Promise<TimeLog>;
+  logTime(
+    inputOrActivityId: LogTimeInput | string,
+    durationMinutes?: number,
+    notes?: string,
+    timestamp?: number
+  ): Promise<TimeLog>;
   getTimeLogs(activityId?: string): Promise<TimeLog[]>;
   getHeroState(): Promise<HeroState>;
   ensureProfile(): Promise<UserProfile>;
@@ -27,6 +32,7 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     const initialProfile: UserProfile = {
       id: 'me',
       name: 'Hero of Hellas',
+      totalMinutes: 0,
       totalHours: 0,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -70,25 +76,47 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     return await db.activities.get(id);
   }
 
-  async function logTime(input: LogTimeInput): Promise<TimeLog> {
-    if (input.durationMinutes <= 0) {
+  async function logTime(
+    inputOrActivityId: LogTimeInput | string,
+    durationMinutesArg?: number,
+    notesArg?: string,
+    timestampArg?: number
+  ): Promise<TimeLog> {
+    let activityId: string;
+    let durationMinutes: number;
+    let notes: string | undefined;
+    let timestamp: number | undefined;
+
+    if (typeof inputOrActivityId === 'string') {
+      activityId = inputOrActivityId;
+      durationMinutes = durationMinutesArg ?? 0;
+      notes = notesArg;
+      timestamp = timestampArg;
+    } else {
+      activityId = inputOrActivityId.activityId;
+      durationMinutes = inputOrActivityId.durationMinutes;
+      notes = inputOrActivityId.notes;
+      timestamp = inputOrActivityId.timestamp;
+    }
+
+    if (durationMinutes <= 0) {
       throw new Error('Duration must be greater than zero');
     }
 
     const now = Date.now();
     const newLog: TimeLog = {
       id: crypto.randomUUID(),
-      activityId: input.activityId,
-      durationMinutes: input.durationMinutes,
-      timestamp: input.timestamp ?? now,
-      notes: input.notes?.trim() || undefined,
+      activityId,
+      durationMinutes,
+      timestamp: timestamp ?? now,
+      notes: notes?.trim() || undefined,
       createdAt: now,
     };
 
     await db.transaction('rw', [db.activities, db.timeLogs, db.userProfile], async () => {
-      const activity = await db.activities.get(input.activityId);
+      const activity = await db.activities.get(activityId);
       if (!activity) {
-        throw new Error(`Activity not found: ${input.activityId}`);
+        throw new Error(`Activity not found: ${activityId}`);
       }
 
       // 1. Insert time log
@@ -104,24 +132,14 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
         updatedAt: now,
       });
 
-      // 3. Denormalize on UserProfile (O(1) hero total hours)
-      let profile = await db.userProfile.get('me');
-      if (!profile) {
-        profile = {
-          id: 'me',
-          name: 'Hero of Hellas',
-          totalHours: 0,
-          createdAt: now,
-          updatedAt: now,
-        };
-        await db.userProfile.put(profile);
-      }
-
-      const addedHours = newLog.durationMinutes / 60;
-      const newTotalHours = Math.round((profile.totalHours + addedHours) * 100) / 100;
+      // 3. Denormalize on UserProfile (O(1) hero total hours without floating point drift)
+      const profile = await ensureProfile();
+      const updatedHeroMinutes = (profile.totalMinutes ?? 0) + newLog.durationMinutes;
+      const updatedTotalHours = Math.round((updatedHeroMinutes / 60) * 100) / 100;
 
       await db.userProfile.update('me', {
-        totalHours: newTotalHours,
+        totalMinutes: updatedHeroMinutes,
+        totalHours: updatedTotalHours,
         updatedAt: now,
       });
     });

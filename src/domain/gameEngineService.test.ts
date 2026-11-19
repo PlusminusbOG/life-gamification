@@ -84,35 +84,35 @@ describe('GameEngineService (Primary Seam)', () => {
       expect(updatedHero.profile.totalHours).toBe(1);
     });
 
-    it('handles multiple consecutive time logs with strictly cumulative, non-decreasing hours', async () => {
+    it('handles multiple consecutive time logs with strictly cumulative, non-decreasing hours and zero drift', async () => {
       const activity = await service.createActivity({ name: 'Guitar Practice' });
 
-      // First log: 30 minutes
-      await service.logTime({
-        activityId: activity.id,
-        durationMinutes: 30,
-      });
+      // Test multiple small logs to confirm no floating-point rounding drift
+      // 6 logs of 10 minutes = 60 minutes = 1.00 hours
+      for (let i = 0; i < 6; i++) {
+        await service.logTime(activity.id, 10, `Session chunk ${i + 1}`);
+      }
 
       let currentHero = await service.getHeroState();
-      expect(currentHero.profile.totalHours).toBe(0.5);
+      expect(currentHero.profile.totalMinutes).toBe(60);
+      expect(currentHero.profile.totalHours).toBe(1.0);
 
-      // Second log: 90 minutes (1.5 hours)
+      // Add another 90 minutes (1.5 hours)
       await service.logTime({
         activityId: activity.id,
         durationMinutes: 90,
       });
 
       currentHero = await service.getHeroState();
-      expect(currentHero.profile.totalHours).toBe(2);
+      expect(currentHero.profile.totalMinutes).toBe(150);
+      expect(currentHero.profile.totalHours).toBe(2.5);
 
       const updatedActivity = await service.getActivity(activity.id);
-      expect(updatedActivity!.totalMinutes).toBe(120);
+      expect(updatedActivity!.totalMinutes).toBe(150);
 
       // Check timeLogs query for this activity
       const logs = await service.getTimeLogs(activity.id);
-      expect(logs).toHaveLength(2);
-      expect(logs[0].durationMinutes).toBe(30);
-      expect(logs[1].durationMinutes).toBe(90);
+      expect(logs).toHaveLength(7);
     });
 
     it('throws error when attempting to log time to a non-existent activity', async () => {

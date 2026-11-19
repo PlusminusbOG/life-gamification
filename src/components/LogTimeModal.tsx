@@ -7,7 +7,7 @@ interface LogTimeModalProps {
   activity: Activity | null;
   isOpen: boolean;
   onClose: () => void;
-  onLogTime: (input: { activityId: string; durationMinutes: number; notes?: string }) => Promise<void>;
+  onLogTime: (input: { activityId: string; durationMinutes: number; notes?: string; timestamp?: number }) => Promise<void>;
 }
 
 const PRESET_DURATIONS = [
@@ -27,6 +27,13 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
 }) => {
   const [durationMinutes, setDurationMinutes] = useState<number>(30);
   const [customInput, setCustomInput] = useState<string>('30');
+  const [dateTimeInput, setDateTimeInput] = useState<string>(() => {
+    const now = new Date();
+    // format as YYYY-MM-DDTHH:MM for datetime-local
+    const offset = now.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
+    return localISOTime;
+  });
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,10 +67,13 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
     try {
       setIsSubmitting(true);
       setError(null);
+      const chosenTimestamp = dateTimeInput ? new Date(dateTimeInput).getTime() : Date.now();
+
       await onLogTime({
         activityId: activity.id,
         durationMinutes,
         notes: notes.trim() || undefined,
+        timestamp: chosenTimestamp,
       });
       setNotes('');
       setDurationMinutes(30);
@@ -104,7 +114,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-100">Log Time: {activity.name}</h2>
-              <p className="text-xs text-slate-400">Record a completed focused session</p>
+              <p className="text-xs text-slate-400">Record a completed time log</p>
             </div>
           </div>
           <button
@@ -116,7 +126,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           {error && (
             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
               {error}
@@ -126,7 +136,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
           {/* Quick Preset Chips */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-              Select Session Duration
+              Duration Presets
             </label>
             <div className="grid grid-cols-3 gap-2">
               {PRESET_DURATIONS.map((preset) => {
@@ -153,7 +163,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
           {/* Custom Duration in Minutes */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Custom Minutes
+              Duration (Minutes)
             </label>
             <div className="relative">
               <input
@@ -176,6 +186,19 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
             </div>
           </div>
 
+          {/* Post-factum Date/Time Picker */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              Completed At (Post-Factum)
+            </label>
+            <input
+              type="datetime-local"
+              value={dateTimeInput}
+              onChange={(e) => setDateTimeInput(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all font-mono"
+            />
+          </div>
+
           {/* Optional Notes */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
@@ -186,7 +209,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What did you work on or accomplish during this session?"
+              placeholder="What did you focus on during this logged time?"
               className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
             />
           </div>
@@ -207,7 +230,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
               className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold transition-all shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>{isSubmitting ? 'Recording...' : 'Record Session'}</span>
+              <span>{isSubmitting ? 'Recording...' : 'Record Time Log'}</span>
             </button>
           </div>
         </form>
