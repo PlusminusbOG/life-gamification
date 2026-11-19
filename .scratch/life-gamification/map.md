@@ -19,6 +19,7 @@ Full architecture, domain model, and UI specification for an offline-first (Loca
 ## Decisions so far
 
 <!-- the index: one line per closed ticket, enough to judge relevance, then zoom the link for the detail the ticket holds -->
+- [02: Dexie.js Schema and JSON Serialization](issues/02-dexie-schema-and-export.md) — Dexie v4+ schema established using client UUIDs, compound indexes (`[activityId+timestamp]`, `[status+dueDate]`), atomic write transactions for denormalized totals, and lossless backup/restore via `dexie-export-import` with replace/merge conflict modes. (Research: [docs/research/02-dexie-schema-and-export.md](../../docs/research/02-dexie-schema-and-export.md)).
 
 ## Not yet specified
 
