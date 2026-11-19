@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Прототип логики прокачки: Греческий пантеон & Конструктор квестов</title>
+  <style>
+    :root {
+      --bg: #070a12;
+      --card-bg: #0f172a;
+      --card-border: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --gold: #f59e0b;
+      --gold-glow: rgba(245, 158, 11, 0.25);
+      --greek-blue: #38bdf8;
+      --greek-blue-glow: rgba(56, 189, 248, 0.25);
+      --accent: #10b981;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding: 24px 16px 80px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    header {
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 16px;
+    }
+    .badge-proto {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: #78350f;
+      color: #fde68a;
+      margin-bottom: 8px;
+    }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; color: #f8fafc; }
+    .question-box {
+      background: rgba(15, 23, 42, 0.8);
+      border-left: 4px solid var(--gold);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-top: 12px;
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 768px) {
+      .grid-layout { grid-template-columns: 1.05fr 0.95fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    .card-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Model Selector */
+    .model-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .model-btn {
+      flex: 1;
+      min-width: 140px;
+      padding: 10px 14px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .model-btn.active {
+      background: #451a03;
+      border-color: var(--gold);
+      color: #fef3c7;
+      box-shadow: 0 0 14px var(--gold-glow);
+    }
+    .model-btn small {
+      display: block;
+      font-size: 11px;
+      font-weight: normal;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    /* Hero / State display */
+    .hero-stat-block {
+      text-align: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 16px;
+    }
+    .level-ring {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: #0b1120;
+      border: 3px solid var(--gold);
+      font-size: 34px;
+      font-weight: 900;
+      color: #fef08a;
+      box-shadow: 0 0 24px var(--gold-glow);
+      margin-bottom: 8px;
+    }
+    .pantheon-tier {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 800;
+      color: var(--greek-blue);
+      margin-bottom: 2px;
+    }
+    .rank-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+    .hours-sub {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      margin-bottom: 16px;
+    }
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+    .progress-bar-bg {
+      background: #1e293b;
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #d97706, #f59e0b, #fbbf24);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.25s ease-out;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: var(--text-muted); }
+    .stat-value { font-weight: 600; color: #f1f5f9; }
+
+    /* Change tracker */
+    .change-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid #b45309;
+      color: #fde68a;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 14px;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    button.action-btn {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    button.action-btn:hover {
+      background: #334155;
+      border-color: #475569;
+    }
+    button.action-btn.gold {
+      background: #78350f;
+      border-color: #b45309;
+      color: #fef3c7;
+    }
+    button.action-btn.gold:hover {
+      background: #92400e;
+    }
+    button.action-btn.reset {
+      background: transparent;
+      color: #ef4444;
+      border-color: #7f1d1d;
+    }
+    button.action-btn.reset:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    /* Slider */
+    .slider-container {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--card-border);
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+
+    /* Quest creator form */
+    .quest-form {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+    .quest-form-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--greek-blue);
+      margin-bottom: 10px;
+    }
+    .form-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .input-text {
+      flex: 2;
+      min-width: 180px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .input-select {
+      flex: 1;
+      min-width: 120px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .quest-list {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .quest-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .quest-item.completed {
+      opacity: 0.45;
+      text-decoration: line-through;
+      background: #0f172a;
+    }
+    .quest-reward-tag {
+      background: #064e3b;
+      color: #a7f3d0;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+
+    /* Pantheon Roadmap */
+    .pantheon-roadmap {
+      margin-top: 20px;
+      background: #090e1a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+    }
+    .roadmap-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .roadmap-row:last-child { border-bottom: none; }
+    .roadmap-active { color: var(--gold); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-proto">Скилл Prototype — Логика (Logic Demo)</div>
+      <h1>Калькулятор прокачки: Греческий Пантеон & Квесты</h1>
+      <div class="question-box">
+        <strong>Вопрос тикета 01:</strong> Формула уровней с повышенной плотностью наград (100+ уровней), греческой системой рангов (Смертный → Герой → Полубог → Титан → Олимпиец → Бог Олимпа) и возможностью создавать собственные квесты с получением опыта.
+      </div>
+    </header>
+
+    <!-- Выбор скорости набора уровней -->
+    <div class="model-selector">
+      <button class="model-btn active" id="btnModelGreekDense" onclick="switchModel('dense')">
+        ⚡ Ускоренный Пантеон (100 уровней на 350ч)
+        <small>Частый дофамин: Ур. 2 за 20м, Ур. 12 за 10ч, Ур. 48 за 100ч, Ур. 100 за 350ч</small>
+      </button>
+      <button class="model-btn" id="btnModelGreekGrand" onclick="switchModel('grand')">
+        🏛️ Величественный Пантеон (100 уровней на 750ч)
+        <small>Более монументально: Ур. 2 за 35м, Ур. 10 за 15ч, Ур. 38 за 100ч, Ур. 100 за 750ч</small>
+      </button>
+      <button class="model-btn" id="btnModelGreekUltra" onclick="switchModel('ultra')">
+        🔥 Ультра-частые уровни (100 ур. на 150ч)
+        <small>Максимум левелапов: Ур. 2 за 10м, Ур. 20 за 10ч, Ур. 75 за 100ч</small>
+      </button>
+    </div>
+
+    <div class="grid-layout">
+      <!-- Панель текущего состояния героя -->
+      <div class="card">
+        <div class="card-title">
+          <span>Статус героя</span>
+          <span id="activeModelLabel" style="color: var(--gold); font-size: 11px;">Пантеон (350ч)</span>
+        </div>
+
+        <div class="hero-stat-block">
+          <div class="pantheon-tier" id="heroTier">ПАНТЕОН: СМЕРТНЫЙ</div>
+          <div class="level-ring" id="heroLevel">1</div>
+          <div class="rank-title" id="heroRank">Странник Итаки</div>
+          <div class="hours-sub" id="heroHours">0 ч 00 мин набрано</div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-labels">
+            <span>До Уровня <span id="nextLevel">2</span> (<span id="nextRankTitle">Спартанский рекрут</span>)</span>
+            <span id="progressText">0 / 22 мин (0%)</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-label">Всего часов в активе:</span>
+          <span class="stat-value" id="statTotalHours">0.00 ч</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Осталось до след. уровня:</span>
+          <span class="stat-value" id="statRemaining">0.37 ч (22 мин)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Стоимость текущего уровня:</span>
+          <span class="stat-value" id="statLevelCost">22 мин</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Статус на 10 часах:</span>
+          <span class="stat-value" id="stat10h">Уровень 12 (Аргонавт)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Статус на 100 часах:</span>
+          <span class="stat-value" id="stat100h">Уровень 48 (Наследник Геракла)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Статус на 500 часах:</span>
+          <span class="stat-value" id="stat500h">Уровень 126 (Верховный Олимпиец)</span>
+        </div>
+
+        <div class="change-banner" id="changeBanner">
+          Начните путь: добавьте время или создайте свой квест ниже.
+        </div>
+
+        <!-- Иерархия греческого пантеона -->
+        <div class="pantheon-roadmap">
+          <div style="font-weight: 700; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; font-size: 11px;">
+            Ступени Греческого Пантеона:
+          </div>
+          <div class="roadmap-row" id="tierRowMortal">
+            <span>Ур. 1–10: <strong>Смертный</strong> (Странник → Гоплит → Искатель Руна)</span>
+            <span>0–8 ч</span>
+          </div>
+          <div class="roadmap-row" id="tierRowHero">
+            <span>Ур. 11–30: <strong>Герой Эллады</strong> (Аргонавт → Спартанец → Герой Трои)</span>
+            <span>8–45 ч</span>
+          </div>
+          <div class="roadmap-row" id="tierRowDemigod">
+            <span>Ур. 31–55: <strong>Полубог</strong> (Потомок Персея → Наследник Геракла)</span>
+            <span>45–125 ч</span>
+          </div>
+          <div class="roadmap-row" id="tierRowTitan">
+            <span>Ур. 56–80: <strong>Титан Воли</strong> (Несущий Небо Атлант → Прометей)</span>
+            <span>125–230 ч</span>
+          </div>
+          <div class="roadmap-row" id="tierRowOlympian">
+            <span>Ур. 81–99: <strong>Олимпиец</strong> (Гермес → Афина → Аполлон)</span>
+            <span>230–350 ч</span>
+          </div>
+          <div class="roadmap-row" id="tierRowGod">
+            <span>Ур. 100+: <strong>Владыка Олимпа</strong> (Зевс / Пантеон Бессмертных)</span>
+            <span>350+ ч</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Панель действий, логов и квестов -->
+      <div class="card">
+        <div class="card-title">Быстрое логирование времени</div>
+        <div class="btn-group">
+          <button class="action-btn gold" onclick="addTime(30, '30 минут фокуса')">+30 мин</button>
+          <button class="action-btn gold" onclick="addTime(60, '1 час практики')">+1 час</button>
+          <button class="action-btn gold" onclick="addTime(120, '2 часа глубокой работы')">+2 часа</button>
+          <button class="action-btn gold" onclick="addTime(300, '5 часов марафона')">+5 часов</button>
+          <button class="action-btn reset" onclick="resetState()">Сброс (0 ч)</button>
+        </div>
+
+        <div class="slider-container">
+          <div class="slider-header">
+            <span>Перемотка времени вперед:</span>
+            <strong id="sliderValue">0 ч</strong>
+          </div>
+          <input type="range" id="timeSlider" min="0" max="600" step="1" value="0" oninput="setHoursFromSlider(this.value)">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-top: 4px;">
+            <span>0 ч</span>
+            <span>10 ч</span>
+            <span>50 ч</span>
+            <span>100 ч (Полубог)</span>
+            <span>350 ч (Олимп)</span>
+            <span>600 ч</span>
+          </div>
+        </div>
+
+        <!-- КОНСТРУКТОР СВОИХ КВЕСТОВ -->
+        <div class="quest-form">
+          <div class="quest-form-title">⚡ Создать свой квест</div>
+          <div class="form-row">
+            <input type="text" id="customQuestTitle" class="input-text" placeholder="Название (напр., «Прочитать 30 стр.»)" value="">
+            <select id="customQuestMinutes" class="input-select">
+              <option value="15">+15 мин XP</option>
+              <option value="30" selected>+30 мин XP</option>
+              <option value="45">+45 мин XP</option>
+              <option value="60">+1 час XP</option>
+              <option value="120">+2 часа XP</option>
+            </select>
+            <button class="action-btn gold" style="padding: 8px 16px;" onclick="handleCreateQuest()">Добавить</button>
+          </div>
+        </div>
+
+        <!-- Список квестов -->
+        <div style="margin-top: 16px;">
+          <div class="card-title">
+            <span>Активные квесты</span>
+            <span style="font-size: 11px; color: var(--text-muted);">Кликните, чтобы завершить</span>
+          </div>
+          <div class="quest-list" id="questListContainer">
+            <!-- Dynamic quest items -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЧИСТЫЙ МОДУЛЬ ПРОКАЧКИ (ГРЕЧЕСКИЙ ПАНТЕОН) -->
+  <script>
+    /**
+     * Чистый переносимый модуль прогрессии греческой мифологии
+     */
+    const GreekProgressionModule = {
+      // Конфигурации плотности уровней
+      presets: {
+        dense: { multiplier: 3.0, power: 0.60, name: "Ускоренный (100 ур. за 350ч)" },
+        grand: { multiplier: 2.3, power: 0.58, name: "Величественный (100 ур. за 750ч)" },
+        ultra: { multiplier: 4.2, power: 0.62, name: "Ультра-частый (100 ур. за 150ч)" }
+      },
+
+      // Формула: Level = 1 + floor( hours^power * multiplier )
+      calculateLevel(totalMinutes, presetKey = 'dense') {
+        const hours = Math.max(0, totalMinutes / 60);
+        const { multiplier, power } = this.presets[presetKey] || this.presets.dense;
+
+        const level = Math.max(1, Math.floor(1 + Math.pow(hours, power) * multiplier));
+
+        // Обратная функция: часы для заданного уровня L
+        const getHoursForLevel = (lvl) => {
+          if (lvl <= 1) return 0;
+          return Math.pow((lvl - 1) / multiplier, 1 / power);
+        };
+
+        const hoursCurrent = getHoursForLevel(level);
+        const hoursNext = getHoursForLevel(level + 1);
+
+        const currentLevelMin = Math.round(hoursCurrent * 60);
+        const nextLevelMin = Math.round(hoursNext * 60);
+
+        const rankInfo = this.getGreekRank(level);
+
+        return {
+          level,
+          currentLevelMin,
+          nextLevelMin,
+          tierName: rankInfo.tierName,
+          rankTitle: rankInfo.rankTitle,
+          tierCode: rankInfo.tierCode
+        };
+      },
+
+      // Иерархия титулов греческой мифологии
+      getGreekRank(level) {
+        if (level >= 100) {
+          return { tierCode: 'god', tierName: 'ПАНТЕОН: БОГ ОЛИМПА', rankTitle: 'Владыка Олимпа (Зевс)' };
+        }
+        if (level >= 81) {
+          const sub = level - 80;
+          let name = 'Олимпиец';
+          if (sub >= 15) name = 'Бог Мудрости (Афина)';
+          else if (sub >= 10) name = 'Бог Света и Искусств (Аполлон)';
+          else if (sub >= 5) name = 'Вестник Богов (Гермес)';
+          else name = 'Страж Священного Олимпа';
+          return { tierCode: 'olympian', tierName: 'ПАНТЕОН: ОЛИМПИЕЦ', rankTitle: `${name} (Ур. ${level})` };
+        }
+        if (level >= 56) {
+          const sub = level - 55;
+          let name = 'Титан';
+          if (sub >= 18) name = 'Владыка Времени (Хронос)';
+          else if (sub >= 10) name = 'Дарующий Огонь (Прометей)';
+          else name = 'Держатель Небосвода (Атлант)';
+          return { tierCode: 'titan', tierName: 'ПАНТЕОН: ТИТАН ВОЛИ', rankTitle: `${name} (Ур. ${level})` };
+        }
+        if (level >= 31) {
+          const sub = level - 30;
+          let name = 'Полубог';
+          if (sub >= 18) name = 'Несокрушимый Наследник Геракла';
+          else if (sub >= 10) name = 'Победитель Горгоны (Персей)';
+          else name = 'Избранник Дельфийского Оракула';
+          return { tierCode: 'demigod', tierName: 'ПАНТЕОН: ПОЛУБОГ', rankTitle: `${name} (Ур. ${level})` };
+        }
+        if (level >= 11) {
+          const sub = level - 10;
+          let name = 'Герой';
+          if (sub >= 15) name = 'Герой Троянской Войны (Ахилл)';
+          else if (sub >= 10) name = 'Победитель Минотавра (Тесей)';
+          else if (sub >= 5) name = 'Спартанский Воитель';
+          else name = 'Аргонавт Эллады';
+          return { tierCode: 'hero', tierName: 'ПАНТЕОН: ГЕРОЙ ЭЛЛАДЫ', rankTitle: `${name} (Ур. ${level})` };
+        }
+
+        // 1-10
+        let name = 'Смертный';
+        if (level >= 8) name = 'Искатель Золотого Руна';
+        else if (level >= 5) name = 'Спартанский Гоплит';
+        else if (level >= 3) name = 'Афинский Гражданин';
+        else name = 'Странник Итаки';
+
+        return { tierCode: 'mortal', tierName: 'ПАНТЕОН: СМЕРТНЫЙ', rankTitle: `${name} (Ур. ${level})` };
+      },
+
+      calculateProgress(totalMinutes, presetKey = 'dense') {
+        const cur = this.calculateLevel(totalMinutes, presetKey);
+        const next = this.calculateLevel(cur.nextLevelMin, presetKey);
+
+        const needed = Math.max(1, cur.nextLevelMin - cur.currentLevelMin);
+        const earnedInLevel = Math.max(0, totalMinutes - cur.currentLevelMin);
+        const percent = Math.min(100, Math.max(0, (earnedInLevel / needed) * 100));
+
+        return {
+          level: cur.level,
+          tierName: cur.tierName,
+          rankTitle: cur.rankTitle,
+          tierCode: cur.tierCode,
+          nextRankTitle: next.rankTitle,
+          totalMinutes,
+          earnedInLevel,
+          neededInLevel: needed,
+          percent: percent.toFixed(1),
+          remainingMinutes: Math.max(0, cur.nextLevelMin - totalMinutes),
+          levelCostMinutes: needed
+        };
+      }
+    };
+  </script>
+
+  <!-- ИНТЕРФЕЙС И СОСТОЯНИЕ -->
+  <script>
+    let state = {
+      totalMinutes: 0,
+      presetKey: 'dense',
+      lastActionText: 'Начало пути. Выберите действие или создайте свой квест.',
+      quests: [
+        { id: 'q1', title: 'Прочитать 1 главу книги', minutes: 30, completed: false },
+        { id: 'q2', title: 'Утренняя пробежка 3 км', minutes: 25, completed: false },
+        { id: 'q3', title: 'Изучить 10 новых иностранных слов', minutes: 20, completed: false }
+      ]
+    };
+
+    function render() {
+      const calc = GreekProgressionModule.calculateProgress(state.totalMinutes, state.presetKey);
+      const totalHours = (state.totalMinutes / 60).toFixed(2);
+      const hoursInt = Math.floor(state.totalMinutes / 60);
+      const minsRest = state.totalMinutes % 60;
+
+      document.getElementById('heroLevel').textContent = calc.level;
+      document.getElementById('heroTier').textContent = calc.tierName;
+      document.getElementById('heroRank').textContent = calc.rankTitle;
+      document.getElementById('heroHours').textContent = `${hoursInt} ч ${minsRest < 10 ? '0' + minsRest : minsRest} мин набрано`;
+
+      document.getElementById('nextLevel').textContent = calc.level + 1;
+      document.getElementById('nextRankTitle').textContent = calc.nextRankTitle;
+      document.getElementById('progressText').textContent = `${calc.earnedInLevel} / ${calc.neededInLevel} мин (${calc.percent}%)`;
+      document.getElementById('progressBar').style.width = `${calc.percent}%`;
+
+      document.getElementById('statTotalHours').textContent = `${totalHours} ч`;
+      const remH = (calc.remainingMinutes / 60).toFixed(2);
+      document.getElementById('statRemaining').textContent = `${remH} ч (${calc.remainingMinutes} мин)`;
+      document.getElementById('statLevelCost').textContent = `${calc.levelCostMinutes} мин (${(calc.levelCostMinutes/60).toFixed(1)} ч)`;
+
+      // Проекции
+      const p10 = GreekProgressionModule.calculateProgress(10 * 60, state.presetKey);
+      document.getElementById('stat10h').textContent = `Ур. ${p10.level} (${p10.rankTitle})`;
+
+      const p100 = GreekProgressionModule.calculateProgress(100 * 60, state.presetKey);
+      document.getElementById('stat100h').textContent = `Ур. ${p100.level} (${p100.rankTitle})`;
+
+      const p500 = GreekProgressionModule.calculateProgress(500 * 60, state.presetKey);
+      document.getElementById('stat500h').textContent = `Ур. ${p500.level} (${p500.rankTitle})`;
+
+      document.getElementById('sliderValue').textContent = `${Math.round(totalHours)} ч`;
+      document.getElementById('timeSlider').value = Math.min(600, Math.round(totalHours));
+
+      document.getElementById('changeBanner').textContent = state.lastActionText;
+
+      // Подсветка активной ступени в дорожной карте
+      ['Mortal', 'Hero', 'Demigod', 'Titan', 'Olympian', 'God'].forEach(t => {
+        const el = document.getElementById(`tierRow${t}`);
+        if (el) el.classList.remove('roadmap-active');
+      });
+      const activeMap = {
+        mortal: 'Mortal', hero: 'Hero', demigod: 'Demigod', titan: 'Titan', olympian: 'Olympian', god: 'God'
+      };
+      const activeRow = document.getElementById(`tierRow${activeMap[calc.tierCode]}`);
+      if (activeRow) activeRow.classList.add('roadmap-active');
+
+      renderQuests();
+    }
+
+    function renderQuests() {
+      const container = document.getElementById('questListContainer');
+      let html = '';
+      state.quests.forEach(q => {
+        html += `
+          <div class="quest-item ${q.completed ? 'completed' : ''}">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span>${q.completed ? '✅' : '⚔️'}</span>
+              <span style="font-weight:600;">${q.title}</span>
+              <span class="quest-reward-tag">+${q.minutes} мин XP</span>
+            </div>
+            <div>
+              ${q.completed 
+                ? '<span style="color:#64748b; font-size:11px;">Выполнен</span>' 
+                : `<button class="action-btn gold" style="padding:4px 10px; font-size:12px;" onclick="completeCustomQuest('${q.id}')">Завершить</button>`}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function addTime(minutes, reason) {
+      const prev = GreekProgressionModule.calculateProgress(state.totalMinutes, state.presetKey);
+      state.totalMinutes += minutes;
+      const cur = GreekProgressionModule.calculateProgress(state.totalMinutes, state.presetKey);
+
+      if (cur.level > prev.level) {
+        state.lastActionText = `⚡ ТРИУМФ ОЛИМПА! +${minutes} мин (${reason}) → Новый Уровень ${cur.level}! Титул: «${cur.rankTitle}»`;
+      } else {
+        state.lastActionText = `Добавлено +${minutes} мин (${reason}). Всего: ${(state.totalMinutes/60).toFixed(1)} ч.`;
+      }
+      render();
+    }
+
+    function handleCreateQuest() {
+      const input = document.getElementById('customQuestTitle');
+      const select = document.getElementById('customQuestMinutes');
+      const title = input.value.trim();
+      if (!title) {
+        alert('Введите название квеста!');
+        return;
+      }
+      const minutes = parseInt(select.value, 10);
+      const newQuest = {
+        id: 'q_' + Date.now(),
+        title,
+        minutes,
+        completed: false
+      };
+      state.quests.unshift(newQuest);
+      input.value = '';
+      state.lastActionText = `Создан новый квест: «${title}» (+${minutes} мин XP).`;
+      render();
+    }
+
+    function completeCustomQuest(questId) {
+      const q = state.quests.find(item => item.id === questId);
+      if (!q || q.completed) return;
+      q.completed = true;
+      addTime(q.minutes, `Квест: «${q.title}»`);
+    }
+
+    function resetState() {
+      state.totalMinutes = 0;
+      state.quests.forEach(q => q.completed = false);
+      state.lastActionText = 'Сброс прогресса. Вы снова странник у подножия Олимпа.';
+      render();
+    }
+
+    function setHoursFromSlider(val) {
+      state.totalMinutes = parseInt(val, 10) * 60;
+      state.lastActionText = `Время установлено на ${val} ч.`;
+      render();
+    }
+
+    function switchModel(key) {
+      state.presetKey = key;
+      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+      if (key === 'dense') {
+        document.getElementById('btnModelGreekDense').classList.add('active');
+        document.getElementById('activeModelLabel').textContent = 'Пантеон (350ч)';
+      } else if (key === 'grand') {
+        document.getElementById('btnModelGreekGrand').classList.add('active');
+        document.getElementById('activeModelLabel').textContent = 'Пантеон (750ч)';
+      } else {
+        document.getElementById('btnModelGreekUltra').classList.add('active');
+        document.getElementById('activeModelLabel').textContent = 'Ультра (150ч)';
+      }
+      state.lastActionText = `Переключен пресет прогрессии на: ${GreekProgressionModule.presets[key].name}`;
+      render();
+    }
+
+    // Старт
+    render();
+  </script>
+</body>
+</html>

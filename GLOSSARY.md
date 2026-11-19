@@ -39,3 +39,7 @@ _Avoid_: Trophy, reward, badge, award
 **Quest**:
 An actionable To-Do item with completion criteria, optional due date, and an optional link to an Activity/Skill to reward progress upon completion.
 _Avoid_: Task, todo, chore
+
+**Pantheon Tier**:
+A Greek mythology-themed status bracket (Mortal, Hero, Demigod, Titan, Olympian, Ascendant God) reflecting high-level mastery based on cumulative levels and hours.
+_Avoid_: Rank, league, division
