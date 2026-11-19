@@ -16,12 +16,12 @@ export function App() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedActivityForLog, setSelectedActivityForLog] = useState<Activity | null>(null);
 
-  // Live queries from IndexedDB (Dexie)
+  // Живые запросы из IndexedDB (Dexie)
   const profile = useLiveQuery(() => db.userProfile.get('me'));
   const activities = useLiveQuery(() => db.activities.orderBy('createdAt').toArray()) ?? [];
   const timeLogs = useLiveQuery(() => db.timeLogs.orderBy('timestamp').reverse().limit(30).toArray()) ?? [];
 
-  // Initialize singleton user profile on mount if needed
+  // Инициализация синглтона профиля героя при первом запуске
   useEffect(() => {
     gameService.ensureProfile().catch(console.error);
   }, []);
@@ -41,20 +41,20 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
-      {/* Top Hero Banner */}
+      {/* Шапка героя */}
       <Header profile={profile} totalActivities={activities.length} />
 
-      {/* Main Container */}
+      {/* Основной контейнер */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-8 space-y-8">
-        {/* Section Header: Activities */}
+        {/* Заголовок раздела активностей */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
               <Compass className="w-5 h-5 text-amber-400" />
-              <span>Disciplines & Activities</span>
+              <span>Направления и Занятия</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Track focused time across your personal pursuits. Hours never decay or reset.
+              Отслеживайте время, посвященное важным сферам жизни. Часы никогда не сгорают и не уменьшаются.
             </p>
           </div>
 
@@ -63,26 +63,26 @@ export function App() {
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition-all self-start sm:self-auto"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>New Activity</span>
+            <span>Новое занятие</span>
           </button>
         </div>
 
-        {/* Activities Grid */}
+        {/* Сетка занятий */}
         {activities.length === 0 ? (
           <div className="p-8 sm:p-12 text-center rounded-3xl bg-slate-900/40 border border-slate-800/80 border-dashed">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
               <Sparkles className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold text-slate-200">No Pursuits Created Yet</h3>
+            <h3 className="text-lg font-bold text-slate-200">Пока нет созданных занятий</h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-6">
-              Create your first activity (e.g. Reading, Running, Coding, Guitar) to begin recording time and unlocking mythic Pantheon tiers.
+              Создайте первое занятие (например: Чтение, Бег, Программирование, Гитара), чтобы начать копить часы и открывать мифические ранги пантеона.
             </p>
             <button
               onClick={() => setIsCreateOpen(true)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/25 transition-all"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Create First Activity</span>
+              <span>Создать первое занятие</span>
             </button>
           </div>
         ) : (
@@ -97,23 +97,23 @@ export function App() {
           </div>
         )}
 
-        {/* Recent Activity Log History */}
+        {/* История недавних логов времени */}
         <section className="pt-4">
           <RecentLogsList logs={timeLogs} activities={activities} />
         </section>
       </main>
 
-      {/* Footer */}
+      {/* Подвал */}
       <footer className="border-t border-slate-800/60 py-6 px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-center gap-2">
         <div className="flex items-center gap-1.5 text-slate-400 font-medium">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Local-First IndexedDB</span>
+          <span>Локальная база IndexedDB (работает офлайн)</span>
         </div>
         <span className="hidden sm:inline text-slate-700">•</span>
-        <span>Life Gamification MVP — Tracer Bullet #01</span>
+        <span>Геймификация Жизни — Трассирующая пуля #01</span>
       </footer>
 
-      {/* Modals */}
+      {/* Модальные окна */}
       <CreateActivityModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}

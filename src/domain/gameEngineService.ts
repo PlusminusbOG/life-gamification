@@ -31,7 +31,7 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
 
     const initialProfile: UserProfile = {
       id: 'me',
-      name: 'Hero of Hellas',
+      name: 'Герой Эллады',
       totalMinutes: 0,
       totalHours: 0,
       createdAt: Date.now(),
@@ -44,12 +44,12 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
   async function createActivity(input: CreateActivityInput): Promise<Activity> {
     const trimmedName = input.name.trim();
     if (!trimmedName) {
-      throw new Error('Activity name cannot be empty');
+      throw new Error('Название занятия не может быть пустым');
     }
 
     const existing = await db.activities.where('name').equalsIgnoreCase(trimmedName).first();
     if (existing) {
-      throw new Error(`Activity with name "${trimmedName}" already exists`);
+      throw new Error(`Занятие с названием "${trimmedName}" уже существует (already exists)`);
     }
 
     const now = Date.now();
@@ -100,7 +100,7 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     }
 
     if (durationMinutes <= 0) {
-      throw new Error('Duration must be greater than zero');
+      throw new Error('Длительность должна быть больше нуля');
     }
 
     const now = Date.now();
@@ -116,13 +116,13 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     await db.transaction('rw', [db.activities, db.timeLogs, db.userProfile], async () => {
       const activity = await db.activities.get(activityId);
       if (!activity) {
-        throw new Error(`Activity not found: ${activityId}`);
+        throw new Error(`Занятие не найдено: ${activityId} (activity not found)`);
       }
 
-      // 1. Insert time log
+      // 1. Вставка лога времени
       await db.timeLogs.add(newLog);
 
-      // 2. Denormalize on Activity (O(1) read afterwards)
+      // 2. Денормализация на Активности (O(1) последующее чтение)
       const updatedTotalMinutes = activity.totalMinutes + newLog.durationMinutes;
       const updatedLevel = calculateLevel(updatedTotalMinutes);
 
@@ -132,7 +132,7 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
         updatedAt: now,
       });
 
-      // 3. Denormalize on UserProfile (O(1) hero total hours without floating point drift)
+      // 3. Денормализация на UserProfile (O(1) часы героя без дрейфа float)
       const profile = await ensureProfile();
       const updatedHeroMinutes = (profile.totalMinutes ?? 0) + newLog.durationMinutes;
       const updatedTotalHours = Math.round((updatedHeroMinutes / 60) * 100) / 100;

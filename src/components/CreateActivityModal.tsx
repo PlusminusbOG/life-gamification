@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Sparkles, Check } from 'lucide-react';
 import { ICON_OPTIONS, COLOR_OPTIONS } from './icons';
 import type { CreateActivityInput } from '../domain/types';
@@ -25,7 +25,7 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Please provide an activity name');
+      setError('Пожалуйста, укажите название занятия');
       return;
     }
 
@@ -45,7 +45,7 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Failed to create activity');
+        setError('Не удалось создать занятие');
       }
     } finally {
       setIsSubmitting(false);
@@ -55,21 +55,21 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
-        {/* Glow accent */}
+        {/* Фоновое свечение */}
         <div
           className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30 pointer-events-none"
           style={{ backgroundColor: selectedColor }}
         />
 
-        {/* Modal Header */}
+        {/* Шапка модального окна */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-100">Create New Activity</h2>
-              <p className="text-xs text-slate-400">A permanent life pursuit that accumulates lifetime XP</p>
+              <h2 className="text-lg font-bold text-slate-100">Создать новое занятие</h2>
+              <p className="text-xs text-slate-400">Постоянное жизненное направление, накапливающее пожизненный опыт</p>
             </div>
           </div>
           <button
@@ -80,7 +80,7 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
           </button>
         </div>
 
-        {/* Form */}
+        {/* Форма */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-5">
           {error && (
             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
@@ -88,25 +88,25 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
             </div>
           )}
 
-          {/* Activity Name */}
+          {/* Название занятия */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Pursuit Name
+              Название занятия
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Reading Philosophy, Classical Guitar, Marathon Training..."
+              placeholder="например: Чтение книг, Классическая гитара, Подготовка к марафону..."
               className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
             />
           </div>
 
-          {/* Color Selection */}
+          {/* Выбор цвета */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-              Color Theme
+              Цветовая тема
             </label>
             <div className="flex flex-wrap gap-2.5">
               {COLOR_OPTIONS.map((c) => (
@@ -126,10 +126,10 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
             </div>
           </div>
 
-          {/* Icon Selection */}
+          {/* Выбор эмблемы */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-              Emblem / Icon
+              Эмблема / Иконка
             </label>
             <div className="grid grid-cols-5 gap-2 max-h-36 overflow-y-auto p-1.5 bg-slate-950/50 rounded-2xl border border-slate-800/80">
               {ICON_OPTIONS.map((item) => {
@@ -154,7 +154,7 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Действия */}
           <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
             <button
               type="button"
@@ -162,14 +162,14 @@ export const CreateActivityModal: React.FC<CreateActivityModalProps> = ({
               disabled={isSubmitting}
               className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              Отмена
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold transition-all shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating...' : 'Create Activity'}
+              {isSubmitting ? 'Создание...' : 'Создать занятие'}
             </button>
           </div>
         </form>

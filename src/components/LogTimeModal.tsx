@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Clock, FileText, Check, Plus } from 'lucide-react';
 import type { Activity } from '../domain/types';
 import { getIconComponent } from './icons';
@@ -11,12 +11,12 @@ interface LogTimeModalProps {
 }
 
 const PRESET_DURATIONS = [
-  { label: '+15m', minutes: 15 },
-  { label: '+30m', minutes: 30 },
-  { label: '+45m', minutes: 45 },
-  { label: '+1h', minutes: 60 },
-  { label: '+1.5h', minutes: 90 },
-  { label: '+2h', minutes: 120 },
+  { label: '+15м', minutes: 15 },
+  { label: '+30м', minutes: 30 },
+  { label: '+45м', minutes: 45 },
+  { label: '+1ч', minutes: 60 },
+  { label: '+1.5ч', minutes: 90 },
+  { label: '+2ч', minutes: 120 },
 ];
 
 export const LogTimeModal: React.FC<LogTimeModalProps> = ({
@@ -29,7 +29,6 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
   const [customInput, setCustomInput] = useState<string>('30');
   const [dateTimeInput, setDateTimeInput] = useState<string>(() => {
     const now = new Date();
-    // format as YYYY-MM-DDTHH:MM for datetime-local
     const offset = now.getTimezoneOffset() * 60000;
     const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
     return localISOTime;
@@ -60,7 +59,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (durationMinutes <= 0) {
-      setError('Duration must be greater than zero minutes');
+      setError('Длительность должна быть больше нуля минут');
       return;
     }
 
@@ -83,7 +82,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Failed to log time');
+        setError('Не удалось записать время');
       }
     } finally {
       setIsSubmitting(false);
@@ -93,13 +92,13 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
-        {/* Glow accent */}
+        {/* Фоновое свечение */}
         <div
           className="absolute -top-16 -right-16 w-36 h-36 rounded-full blur-3xl opacity-25 pointer-events-none"
           style={{ backgroundColor: cardColor }}
         />
 
-        {/* Modal Header */}
+        {/* Шапка модального окна */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div
@@ -113,8 +112,8 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
               <Icon className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">Log Time: {activity.name}</h2>
-              <p className="text-xs text-slate-400">Record a completed time log</p>
+              <h2 className="text-base font-bold text-slate-100">Запись времени: {activity.name}</h2>
+              <p className="text-xs text-slate-400">Зафиксируйте завершенное время</p>
             </div>
           </div>
           <button
@@ -125,7 +124,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
           </button>
         </div>
 
-        {/* Form */}
+        {/* Форма */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           {error && (
             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
@@ -133,10 +132,10 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
             </div>
           )}
 
-          {/* Quick Preset Chips */}
+          {/* Быстрые кнопки пресетов */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-              Duration Presets
+              Быстрый выбор длительности
             </label>
             <div className="grid grid-cols-3 gap-2">
               {PRESET_DURATIONS.map((preset) => {
@@ -160,10 +159,10 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
             </div>
           </div>
 
-          {/* Custom Duration in Minutes */}
+          {/* Ручной ввод минут */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Duration (Minutes)
+              Длительность (в минутах)
             </label>
             <div className="relative">
               <input
@@ -175,21 +174,21 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
                 className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 font-mono transition-all pr-14"
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-mono">
-                mins
+                мин
               </span>
             </div>
             <div className="mt-1 text-[11px] text-slate-400 flex items-center gap-1">
               <Clock className="w-3 h-3 text-slate-500" />
               <span>
-                Equals approx. <strong className="text-amber-400 font-mono">{(durationMinutes / 60).toFixed(2)}</strong> hours
+                Примерно <strong className="text-amber-400 font-mono">{(durationMinutes / 60).toFixed(2)}</strong> ч
               </span>
             </div>
           </div>
 
-          {/* Post-factum Date/Time Picker */}
+          {/* Выбор времени завершения (post-factum) */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Completed At (Post-Factum)
+              Время завершения (задним числом)
             </label>
             <input
               type="datetime-local"
@@ -199,22 +198,22 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
             />
           </div>
 
-          {/* Optional Notes */}
+          {/* Заметки */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-slate-500" />
-              <span>Notes / Reflections (Optional)</span>
+              <span>Заметки / Размышления (необязательно)</span>
             </label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What did you focus on during this logged time?"
+              placeholder="О чем вы размышляли или что сделали за это время?"
               className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
             />
           </div>
 
-          {/* Actions */}
+          {/* Действия */}
           <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
             <button
               type="button"
@@ -222,7 +221,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
               disabled={isSubmitting}
               className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              Отмена
             </button>
             <button
               type="submit"
@@ -230,7 +229,7 @@ export const LogTimeModal: React.FC<LogTimeModalProps> = ({
               className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold transition-all shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>{isSubmitting ? 'Recording...' : 'Record Time Log'}</span>
+              <span>{isSubmitting ? 'Сохранение...' : 'Записать время'}</span>
             </button>
           </div>
         </form>

@@ -3,6 +3,7 @@ import {
   calculateLevel,
   calculateHoursForLevel,
   getLevelProgress,
+  getPantheonTier,
 } from './progression';
 
 describe('Progression Math Engine (decisions/01-progression-formula.md)', () => {
@@ -44,5 +45,37 @@ describe('Progression Math Engine (decisions/01-progression-formula.md)', () => 
     const progress60 = getLevelProgress(60);
     expect(progress60.currentLevel).toBe(4);
     expect(progress60.nextLevel).toBe(5);
+  });
+
+  it('maps level to Russian Greek Pantheon Tiers and Titles correctly', () => {
+    // Level 1 -> Смертный, Странник Итаки
+    const tier1 = getPantheonTier(1);
+    expect(tier1.tier).toBe('Смертный');
+    expect(tier1.title).toBe('Странник Итаки');
+
+    // Level 15 -> Герой Эллады, Аргонавт
+    const tier15 = getPantheonTier(15);
+    expect(tier15.tier).toBe('Герой Эллады');
+    expect(tier15.title).toBe('Аргонавт');
+
+    // Level 40 -> Полубог, Избранник Оракула
+    const tier40 = getPantheonTier(40);
+    expect(tier40.tier).toBe('Полубог');
+    expect(tier40.title).toBe('Избранник Оракула');
+
+    // Level 60 -> Титан Воли, Держатель Небосвода
+    const tier60 = getPantheonTier(60);
+    expect(tier60.tier).toBe('Титан Воли');
+    expect(tier60.title).toBe('Держатель Небосвода');
+
+    // Level 85 -> Олимпиец, Мудрость Афины
+    const tier85 = getPantheonTier(85);
+    expect(tier85.tier).toBe('Олимпиец');
+    expect(tier85.title).toBe('Мудрость Афины');
+
+    // Level 100 -> Восходящий Бог, Владыка Олимпа
+    const tier100 = getPantheonTier(100);
+    expect(tier100.tier).toBe('Восходящий Бог');
+    expect(tier100.title).toBe('Владыка Олимпа');
   });
 });

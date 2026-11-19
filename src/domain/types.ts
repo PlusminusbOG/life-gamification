@@ -1,44 +1,44 @@
 /**
- * Ubiquitous domain models for Life Gamification
- * Strictly conforms to GLOSSARY.md and docs/research/02-dexie-schema-and-export.md
+ * Единые доменные модели Геймификации Жизни
+ * Соответствует GLOSSARY.md и docs/research/02-dexie-schema-and-export.md
  */
 
 export interface Activity {
   id: string; // UUID
-  name: string; // Unique pursuit name (e.g., "Reading", "Running", "Coding")
-  totalMinutes: number; // Cumulative minutes spent (never decreases)
-  level: number; // Derived RPG level
-  icon?: string; // Optional icon identifier
-  color?: string; // Optional hex/tailwind color
-  createdAt: number; // Epoch ms
-  updatedAt: number; // Epoch ms
+  name: string; // Уникальное название занятия (например, "Чтение", "Бег", "Кодинг")
+  totalMinutes: number; // Накопленные минуты (никогда не уменьшаются)
+  level: number; // Рассчитанный RPG-уровень
+  icon?: string; // Идентификатор иконки
+  color?: string; // Hex или Tailwind цвет
+  createdAt: number; // Метка времени создания (мс)
+  updatedAt: number; // Метка времени обновления (мс)
 }
 
 export interface TimeLog {
   id: string; // UUID
-  activityId: string; // Foreign key -> Activity.id
-  durationMinutes: number; // Logged session duration in minutes
-  timestamp: number; // Epoch ms when session completed
-  notes?: string; // Optional session reflection / notes
-  createdAt: number; // Epoch ms
+  activityId: string; // Внешний ключ -> Activity.id
+  durationMinutes: number; // Длительность в минутах
+  timestamp: number; // Время завершения (мс)
+  notes?: string; // Заметки / размышления
+  createdAt: number; // Время создания записи (мс)
 }
 
 export interface UserProfile {
-  id: string; // Singleton key: 'me'
-  name: string; // Hero name
-  totalMinutes: number; // Cumulative all-time hero minutes (never decreases, prevents rounding drift)
-  totalHours: number; // Cumulative all-time hero hours (never decreases)
-  createdAt: number; // Epoch ms
-  updatedAt: number; // Epoch ms
+  id: string; // Ключ синглтона: 'me'
+  name: string; // Имя героя (по умолчанию "Герой Эллады")
+  totalMinutes: number; // Накопленные минуты героя (исключает погрешность float)
+  totalHours: number; // Накопленные пожизненные часы героя (никогда не уменьшаются)
+  createdAt: number; // Метка времени (мс)
+  updatedAt: number; // Метка времени (мс)
 }
 
 export type PantheonTier =
-  | 'Mortal'
-  | 'Hero of Hellas'
-  | 'Demigod'
-  | 'Titan of Will'
-  | 'Olympian'
-  | 'Ascendant God';
+  | 'Смертный'
+  | 'Герой Эллады'
+  | 'Полубог'
+  | 'Титан Воли'
+  | 'Олимпиец'
+  | 'Восходящий Бог';
 
 export interface PantheonTierInfo {
   tier: PantheonTier;

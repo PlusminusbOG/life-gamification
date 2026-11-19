@@ -1,8 +1,10 @@
 /**
- * Pure progression mathematical engine for Life Gamification
- * Reference: decisions/01-progression-formula.md
- * Formula: Level = 1 + floor( (totalMinutes / 60)^0.60 * 3.0 )
+ * Математический движок прогрессии Геймификации Жизни
+ * Источник: decisions/01-progression-formula.md
+ * Формула: Уровень = 1 + floor( (totalMinutes / 60)^0.60 * 3.0 )
  */
+
+import type { PantheonTierInfo } from './types';
 
 export function calculateLevel(totalMinutes: number): number {
   if (totalMinutes <= 0) return 1;
@@ -48,55 +50,50 @@ export function getLevelProgress(totalMinutes: number): LevelProgress {
   };
 }
 
-export function getPantheonTier(level: number): {
-  tier: import('./types').PantheonTier;
-  title: string;
-  minLevel: number;
-  maxLevel: number;
-} {
+export function getPantheonTier(level: number): PantheonTierInfo {
   if (level >= 100) {
     return {
-      tier: 'Ascendant God',
-      title: 'Ruler of Olympus',
+      tier: 'Восходящий Бог',
+      title: 'Владыка Олимпа',
       minLevel: 100,
       maxLevel: Infinity,
     };
   }
   if (level >= 81) {
     return {
-      tier: 'Olympian',
-      title: 'Wisdom of Athena',
+      tier: 'Олимпиец',
+      title: 'Мудрость Афины',
       minLevel: 81,
       maxLevel: 99,
     };
   }
   if (level >= 56) {
     return {
-      tier: 'Titan of Will',
-      title: 'Bearer of the Heavens',
+      tier: 'Титан Воли',
+      title: 'Держатель Небосвода',
       minLevel: 56,
       maxLevel: 80,
     };
   }
   if (level >= 31) {
     return {
-      tier: 'Demigod',
-      title: 'Chosen of the Oracle',
+      tier: 'Полубог',
+      title: 'Избранник Оракула',
       minLevel: 31,
       maxLevel: 55,
     };
   }
   if (level >= 11) {
     return {
-      tier: 'Hero of Hellas',
-      title: 'Argonaut',
+      tier: 'Герой Эллады',
+      title: 'Аргонавт',
       minLevel: 11,
       maxLevel: 30,
     };
   }
   return {
-    tier: 'Mortal',
-    title: 'Wanderer of Ithaca',
+    tier: 'Смертный',
+    title: 'Странник Итаки',
     minLevel: 1,
     maxLevel: 10,
   };
