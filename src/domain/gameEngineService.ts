@@ -6,6 +6,10 @@ import type {
   HeroState,
   CreateActivityInput,
   LogTimeInput,
+  Quest,
+  QuestStatus,
+  CreateQuestInput,
+  CompleteQuestResult,
 } from './types';
 import { calculateLevel } from './progression';
 
@@ -22,6 +26,13 @@ export interface GameEngineService {
   getTimeLogs(activityId?: string): Promise<TimeLog[]>;
   getHeroState(): Promise<HeroState>;
   ensureProfile(): Promise<UserProfile>;
+
+  // Тикет 03: Квесты
+  createQuest(input: CreateQuestInput): Promise<Quest>;
+  getQuests(filter?: { status?: QuestStatus; isToday?: boolean }): Promise<Quest[]>;
+  getQuest(id: string): Promise<Quest | undefined>;
+  completeQuest(questId: string): Promise<CompleteQuestResult>;
+  deleteQuest(id: string): Promise<void>;
 }
 
 export function createGameEngineService(db: LifeGamificationDB): GameEngineService {
@@ -166,6 +177,132 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     };
   }
 
+  // ==========================================================================
+  // Квесты (Ticket 03)
+  // ==========================================================================
+
+  async function createQuest(input: CreateQuestInput): Promise<Quest> {
+    const trimmedTitle = input.title.trim();
+    if (!trimmedTitle) {
+      throw new Error('Название квеста не может быть пустым');
+    }
+
+    const now = Date.now();
+    const newQuest: Quest = {
+      id: crypto.randomUUID(),
+      title: trimmedTitle,
+      activityId: input.activityId || undefined,
+      status: 'active',
+      rewardMinutes: input.rewardMinutes ?? 30,
+      dueDate: input.dueDate !== undefined ? input.dueDate : null,
+      createdAt: now,
+    };
+
+    await db.quests.add(newQuest);
+    return newQuest;
+  }
+
+  async function getQuests(filter?: {
+    status?: QuestStatus;
+    isToday?: boolean;
+  }): Promise<Quest[]> {
+    let all: Quest[];
+
+    if (filter?.status) {
+      all = await db.quests.where('status').equals(filter.status).toArray();
+    } else {
+      all = await db.quests.toArray();
+    }
+
+    all.sort((a, b) => b.createdAt - a.createdAt);
+
+    if (filter?.isToday !== undefined) {
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
+
+      return all.filter((q) => {
+        const isDueToday =
+          q.dueDate != null && q.dueDate >= startOfDay && q.dueDate <= endOfDay;
+        return filter.isToday ? isDueToday : !isDueToday;
+      });
+    }
+
+    return all;
+  }
+
+  async function getQuest(id: string): Promise<Quest | undefined> {
+    return await db.quests.get(id);
+  }
+
+  async function completeQuest(questId: string): Promise<CompleteQuestResult> {
+    const now = Date.now();
+    let updatedQuest: Quest;
+    let createdTimeLog: TimeLog | undefined;
+
+    await db.transaction('rw', [db.quests, db.activities, db.timeLogs, db.userProfile], async () => {
+      const quest = await db.quests.get(questId);
+      if (!quest) {
+        throw new Error(`Квест не найден: ${questId}`);
+      }
+      if (quest.status === 'completed') {
+        throw new Error(`Квест уже выполнен: ${questId}`);
+      }
+
+      const rewardMinutes = quest.rewardMinutes || 30;
+
+      // 1. Если квест привязан к активности, логируем время и пересчитываем уровень активности
+      if (quest.activityId) {
+        const activity = await db.activities.get(quest.activityId);
+        if (activity) {
+          createdTimeLog = {
+            id: crypto.randomUUID(),
+            activityId: quest.activityId,
+            durationMinutes: rewardMinutes,
+            timestamp: now,
+            notes: `Награда за квест: «${quest.title}»`,
+            createdAt: now,
+          };
+          await db.timeLogs.add(createdTimeLog);
+
+          const updatedTotalMinutes = activity.totalMinutes + rewardMinutes;
+          const updatedLevel = calculateLevel(updatedTotalMinutes);
+
+          await db.activities.update(activity.id, {
+            totalMinutes: updatedTotalMinutes,
+            level: updatedLevel,
+            updatedAt: now,
+          });
+        }
+      }
+
+      // 2. Обновляем пожизненный прогресс героя
+      const profile = await ensureProfile();
+      const updatedHeroMinutes = (profile.totalMinutes ?? 0) + rewardMinutes;
+      const updatedTotalHours = Math.round((updatedHeroMinutes / 60) * 100) / 100;
+
+      await db.userProfile.update('me', {
+        totalMinutes: updatedHeroMinutes,
+        totalHours: updatedTotalHours,
+        updatedAt: now,
+      });
+
+      // 3. Отмечаем квест как выполненный
+      updatedQuest = {
+        ...quest,
+        status: 'completed',
+        completedAt: now,
+      };
+      await db.quests.put(updatedQuest);
+    });
+
+    return { quest: updatedQuest!, timeLog: createdTimeLog };
+  }
+
+  async function deleteQuest(id: string): Promise<void> {
+    await db.quests.delete(id);
+  }
+
   return {
     createActivity,
     getActivities,
@@ -174,5 +311,10 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     getTimeLogs,
     getHeroState,
     ensureProfile,
+    createQuest,
+    getQuests,
+    getQuest,
+    completeQuest,
+    deleteQuest,
   };
 }

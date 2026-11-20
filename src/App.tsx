@@ -3,11 +3,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Sparkles, Compass, ShieldCheck } from 'lucide-react';
 import { db } from './domain/db';
 import { createGameEngineService } from './domain/gameEngineService';
-import type { Activity, CreateActivityInput } from './domain/types';
+import type { Activity, CreateActivityInput, CreateQuestInput } from './domain/types';
 import { Header } from './components/Header';
 import { HeroCharacterSheet } from './components/HeroCharacterSheet';
+import { ParchmentQuestLog } from './components/ParchmentQuestLog';
 import { ActivityCard } from './components/ActivityCard';
 import { CreateActivityModal } from './components/CreateActivityModal';
+import { CreateQuestModal } from './components/CreateQuestModal';
 import { LogTimeModal } from './components/LogTimeModal';
 import { RecentLogsList } from './components/RecentLogsList';
 
@@ -15,12 +17,18 @@ const gameService = createGameEngineService(db);
 
 export function App() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateQuestOpen, setIsCreateQuestOpen] = useState(false);
+  const [createQuestDefaultIsToday, setCreateQuestDefaultIsToday] = useState(true);
   const [selectedActivityForLog, setSelectedActivityForLog] = useState<Activity | null>(null);
 
   // Живые запросы из IndexedDB (Dexie)
   const profile = useLiveQuery(() => db.userProfile.get('me'));
   const activities = useLiveQuery(() => db.activities.orderBy('createdAt').toArray()) ?? [];
   const timeLogs = useLiveQuery(() => db.timeLogs.orderBy('timestamp').reverse().limit(30).toArray()) ?? [];
+  const quests = useLiveQuery(async () => {
+    const list = await db.quests.toArray();
+    return list.sort((a, b) => b.createdAt - a.createdAt);
+  }) ?? [];
 
   // Инициализация синглтона профиля героя при первом запуске
   useEffect(() => {
@@ -40,16 +48,33 @@ export function App() {
     await gameService.logTime(input);
   };
 
+  const handleCreateQuest = async (input: CreateQuestInput) => {
+    await gameService.createQuest(input);
+  };
+
+  const handleCompleteQuest = async (questId: string) => {
+    await gameService.completeQuest(questId);
+  };
+
+  const handleDeleteQuest = async (questId: string) => {
+    await gameService.deleteQuest(questId);
+  };
+
+  const handleOpenCreateQuest = (defaultIsToday: boolean) => {
+    setCreateQuestDefaultIsToday(defaultIsToday);
+    setIsCreateQuestOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
       {/* Шапка героя */}
       <Header profile={profile} totalActivities={activities.length} />
 
-      {/* Основной контейнер: Сетка Variant B (Карточка Героя слева + Активности справа) */}
+      {/* Основной контейнер: Сетка Variant B (Карточка Героя слева + Свиток квестов и активности справа) */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-8 items-start">
           {/* Левая колонка: Карточка Героя (Hero Character Sheet - Variant B) */}
-          <aside className="w-full lg:sticky lg:top-8">
+          <aside className="w-full lg:sticky lg:top-8 space-y-6">
             <HeroCharacterSheet
               profile={profile}
               totalActivities={activities.length}
@@ -57,10 +82,22 @@ export function App() {
             />
           </aside>
 
-          {/* Правая колонка: Направления и активности + Недавние логи */}
+          {/* Правая колонка: Свиток Квестов + Направления и активности + Логи */}
           <div className="space-y-8 min-w-0">
+            {/* Свиток походов и квестов (Ticket 03: Parchment Quest Log) */}
+            <section>
+              <ParchmentQuestLog
+                quests={quests}
+                activities={activities}
+                onCompleteQuest={handleCompleteQuest}
+                onDeleteQuest={handleDeleteQuest}
+                onOpenCreateQuest={handleOpenCreateQuest}
+                onSaveStopwatchTime={handleLogTime}
+              />
+            </section>
+
             {/* Заголовок раздела активностей */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 pt-2 border-t border-slate-800/80">
               <div>
                 <h2 className="text-xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
                   <Compass className="w-5 h-5 text-amber-400" />
@@ -125,7 +162,7 @@ export function App() {
           <span>Локальная база IndexedDB (работает офлайн)</span>
         </div>
         <span className="hidden sm:inline text-slate-700">•</span>
-        <span>Геймификация Жизни — Карточка Героя и Греческий Пантеон</span>
+        <span>Геймификация Жизни — Квесты и Секундомер Фокуса</span>
       </footer>
 
       {/* Модальные окна */}
@@ -133,6 +170,14 @@ export function App() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreate={handleCreateActivity}
+      />
+
+      <CreateQuestModal
+        isOpen={isCreateQuestOpen}
+        onClose={() => setIsCreateQuestOpen(false)}
+        onCreate={handleCreateQuest}
+        activities={activities}
+        defaultIsToday={createQuestDefaultIsToday}
       />
 
       <LogTimeModal

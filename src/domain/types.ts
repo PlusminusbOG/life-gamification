@@ -83,3 +83,32 @@ export interface LogTimeInput {
   notes?: string;
   timestamp?: number;
 }
+
+// ============================================================================
+// Тикет 03: Квесты (Quests)
+// ============================================================================
+
+export type QuestStatus = 'active' | 'completed' | 'archived';
+
+export interface Quest {
+  id: string; // UUID
+  title: string; // Название подвига / квеста
+  activityId?: string; // Опциональная привязка к Activity.id
+  status: QuestStatus; // Строковый enum для индексации в IndexedDB
+  rewardMinutes: number; // Награда в минутах XP (+15, +30, +45, +60, +120)
+  dueDate?: number | null; // Срок выполнения (мс) или null для бэклога
+  completedAt?: number | null; // Метка времени завершения (мс)
+  createdAt: number; // Метка времени создания (мс)
+}
+
+export interface CreateQuestInput {
+  title: string;
+  activityId?: string;
+  rewardMinutes?: number; // По умолчанию 30
+  dueDate?: number | null; // По умолчанию null (бэклог)
+}
+
+export interface CompleteQuestResult {
+  quest: Quest;
+  timeLog?: TimeLog;
+}

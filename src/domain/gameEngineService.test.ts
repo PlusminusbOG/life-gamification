@@ -167,4 +167,144 @@ describe('GameEngineService (Primary Seam)', () => {
       expect(act!.level).toBe(12);
     });
   });
+
+  describe('Quest Management (Ticket 03)', () => {
+    it('verifies db.quests table exists with compound and query indexes', async () => {
+      expect(db.quests).toBeDefined();
+      const schema = db.tables.find((t) => t.name === 'quests')?.schema;
+      expect(schema).toBeDefined();
+      expect(schema?.primKey.name).toBe('id');
+      const indexNames = schema?.indexes.map((idx) => idx.name);
+      expect(indexNames).toContain('activityId');
+      expect(indexNames).toContain('status');
+      expect(indexNames).toContain('dueDate');
+      expect(indexNames).toContain('completedAt');
+      expect(indexNames).toContain('[status+dueDate]');
+      expect(indexNames).toContain('[activityId+status]');
+    });
+
+    it('creates custom quests with title, optional activity link, and XP reward (+15m, +30m, +45m, +1h, +2h)', async () => {
+      const activity = await service.createActivity({ name: 'Filosofia' });
+
+      // Quest with activity link and 45m reward
+      const quest1 = await service.createQuest({
+        title: 'Прочитать 30 страниц книги',
+        activityId: activity.id,
+        rewardMinutes: 45,
+        dueDate: Date.now(),
+      });
+
+      expect(quest1.id).toBeDefined();
+      expect(quest1.title).toBe('Прочитать 30 страниц книги');
+      expect(quest1.activityId).toBe(activity.id);
+      expect(quest1.rewardMinutes).toBe(45);
+      expect(quest1.status).toBe('active');
+      expect(quest1.completedAt).toBeUndefined();
+
+      // Backlog quest without activity link (default 30m reward)
+      const quest2 = await service.createQuest({
+        title: 'Навести порядок на рабочем месте',
+      });
+
+      expect(quest2.activityId).toBeUndefined();
+      expect(quest2.rewardMinutes).toBe(30);
+      expect(quest2.status).toBe('active');
+      expect(quest2.dueDate).toBeNull();
+    });
+
+    it('filters quests into Today and Backlog categories', async () => {
+      const now = Date.now();
+      const todayQuest = await service.createQuest({
+        title: 'Утренняя пробежка 5 км',
+        rewardMinutes: 30,
+        dueDate: now,
+      });
+
+      const backlogQuest = await service.createQuest({
+        title: 'Написать главу диплома',
+        rewardMinutes: 120,
+        dueDate: null,
+      });
+
+      const allActive = await service.getQuests({ status: 'active' });
+      expect(allActive).toHaveLength(2);
+
+      const todayQuests = await service.getQuests({ status: 'active', isToday: true });
+      expect(todayQuests).toHaveLength(1);
+      expect(todayQuests[0].id).toBe(todayQuest.id);
+
+      const backlogQuests = await service.getQuests({ status: 'active', isToday: false });
+      expect(backlogQuests).toHaveLength(1);
+      expect(backlogQuests[0].id).toBe(backlogQuest.id);
+    });
+
+    it('completing a quest atomically marks it completed, logs corresponding XP minutes to linked Activity, and recalculates levels', async () => {
+      const activity = await service.createActivity({ name: 'Спорт' });
+      expect(activity.totalMinutes).toBe(0);
+      expect(activity.level).toBe(1);
+
+      const quest = await service.createQuest({
+        title: 'Интенсивная тренировка в зале',
+        activityId: activity.id,
+        rewardMinutes: 60, // +1h XP
+        dueDate: Date.now(),
+      });
+
+      const result = await service.completeQuest(quest.id);
+
+      expect(result.quest.status).toBe('completed');
+      expect(result.quest.completedAt).toBeGreaterThan(0);
+      expect(result.timeLog).toBeDefined();
+      expect(result.timeLog?.durationMinutes).toBe(60);
+      expect(result.timeLog?.activityId).toBe(activity.id);
+
+      // Verify activity was updated: 60 min -> Level 4
+      const updatedActivity = await service.getActivity(activity.id);
+      expect(updatedActivity!.totalMinutes).toBe(60);
+      expect(updatedActivity!.level).toBe(4);
+
+      // Verify Hero Profile totalHours was updated
+      const hero = await service.getHeroState();
+      expect(hero.profile.totalMinutes).toBe(60);
+      expect(hero.profile.totalHours).toBe(1.0);
+    });
+
+    it('completing a quest without activity link still awards XP to the hero profile', async () => {
+      const quest = await service.createQuest({
+        title: 'Генеральная уборка',
+        rewardMinutes: 30,
+      });
+
+      const result = await service.completeQuest(quest.id);
+      expect(result.quest.status).toBe('completed');
+      expect(result.timeLog).toBeUndefined();
+
+      const hero = await service.getHeroState();
+      expect(hero.profile.totalMinutes).toBe(30);
+      expect(hero.profile.totalHours).toBe(0.5);
+    });
+
+    it('rejects completing an already completed quest with a clear error', async () => {
+      const quest = await service.createQuest({
+        title: 'Разовое поручение',
+        rewardMinutes: 15,
+      });
+
+      await service.completeQuest(quest.id);
+
+      await expect(service.completeQuest(quest.id)).rejects.toThrow(
+        /уже выполнен/i
+      );
+    });
+
+    it('deletes a quest cleanly', async () => {
+      const quest = await service.createQuest({
+        title: 'Удаляемый квест',
+      });
+
+      await service.deleteQuest(quest.id);
+      const fetched = await service.getQuest(quest.id);
+      expect(fetched).toBeUndefined();
+    });
+  });
 });
