@@ -20,6 +20,7 @@ export function App() {
   const [isCreateQuestOpen, setIsCreateQuestOpen] = useState(false);
   const [createQuestDefaultIsToday, setCreateQuestDefaultIsToday] = useState(true);
   const [selectedActivityForLog, setSelectedActivityForLog] = useState<Activity | null>(null);
+  const [questLogTab, setQuestLogTab] = useState<'today' | 'backlog' | 'stopwatch' | 'temple'>('today');
 
   // Живые запросы из IndexedDB (Dexie)
   const profile = useLiveQuery(() => db.userProfile.get('me'));
@@ -30,9 +31,13 @@ export function App() {
     return list.sort((a, b) => b.createdAt - a.createdAt);
   }) ?? [];
 
+  // Живой запрос достижений с вычислением прогресса
+  const achievements = useLiveQuery(() => gameService.getAchievements()) ?? [];
+
   // Инициализация синглтона профиля героя при первом запуске
   useEffect(() => {
     gameService.ensureProfile().catch(console.error);
+    gameService.evaluateAndSaveAchievements().catch(console.error);
   }, []);
 
   const handleCreateActivity = async (input: CreateActivityInput) => {
@@ -65,6 +70,8 @@ export function App() {
     setIsCreateQuestOpen(true);
   };
 
+  const unlockedAchCount = achievements.filter((a) => a.unlockedAt != null).length;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
       {/* Шапка героя */}
@@ -79,20 +86,26 @@ export function App() {
               profile={profile}
               totalActivities={activities.length}
               totalLogsCount={timeLogs.length}
+              unlockedAchievementsCount={unlockedAchCount}
+              totalAchievementsCount={achievements.length || 13}
+              onOpenTemple={() => setQuestLogTab('temple')}
             />
           </aside>
 
           {/* Правая колонка: Свиток Квестов + Направления и активности + Логи */}
           <div className="space-y-8 min-w-0">
-            {/* Свиток походов и квестов (Ticket 03: Parchment Quest Log) */}
+            {/* Свиток походов и квестов + Храм Достижений */}
             <section>
               <ParchmentQuestLog
                 quests={quests}
                 activities={activities}
+                achievements={achievements}
                 onCompleteQuest={handleCompleteQuest}
                 onDeleteQuest={handleDeleteQuest}
                 onOpenCreateQuest={handleOpenCreateQuest}
                 onSaveStopwatchTime={handleLogTime}
+                activeTab={questLogTab}
+                onTabChange={setQuestLogTab}
               />
             </section>
 
@@ -162,7 +175,7 @@ export function App() {
           <span>Локальная база IndexedDB (работает офлайн)</span>
         </div>
         <span className="hidden sm:inline text-slate-700">•</span>
-        <span>Геймификация Жизни — Квесты и Секундомер Фокуса</span>
+        <span>Геймификация Жизни — Храм Достижений Олимпа</span>
       </footer>
 
       {/* Модальные окна */}

@@ -112,3 +112,28 @@ export interface CompleteQuestResult {
   quest: Quest;
   timeLog?: TimeLog;
 }
+
+// ============================================================================
+// Тикет 04: Достижения (Achievements)
+// ============================================================================
+
+export interface Achievement {
+  id: string; // UUID
+  code: string; // Уникальный системный код (например, 'CRONUS_10H', 'HERACLES_1Q')
+  unlockedAt: number | null; // Метка времени получения (мс) или null если заблокировано
+  progress: number; // Текущий прогресс выполнения условия
+}
+
+export type AchievementCategory = 'cronus' | 'heracles' | 'ariadne' | 'muses' | 'secret';
+
+export interface AchievementWithDetails extends Achievement {
+  title: string;
+  titleEn: string;
+  description: string;
+  category: AchievementCategory;
+  categoryTitle: string;
+  icon: string;
+  maxProgress: number;
+  isSecret?: boolean;
+  progressPercent: number;
+}

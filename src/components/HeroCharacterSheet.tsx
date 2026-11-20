@@ -12,6 +12,9 @@ export interface HeroCharacterSheetProps {
   profile?: UserProfile;
   totalActivities?: number;
   totalLogsCount?: number;
+  unlockedAchievementsCount?: number;
+  totalAchievementsCount?: number;
+  onOpenTemple?: () => void;
   className?: string;
 }
 
@@ -19,6 +22,9 @@ export const HeroCharacterSheet: React.FC<HeroCharacterSheetProps> = ({
   profile,
   totalActivities = 0,
   totalLogsCount = 0,
+  unlockedAchievementsCount = 0,
+  totalAchievementsCount = 13,
+  onOpenTemple,
   className = '',
 }) => {
   const totalMinutes = profile?.totalMinutes ?? 0;
@@ -167,6 +173,22 @@ export const HeroCharacterSheet: React.FC<HeroCharacterSheetProps> = ({
         <div className="flex items-center justify-between">
           <span className="text-slate-400">Записей времени:</span>
           <span className="font-semibold text-slate-200">{totalLogsCount}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-slate-400">Достижений в Храме:</span>
+          {onOpenTemple ? (
+            <button
+              onClick={onOpenTemple}
+              className="font-semibold font-mono text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              {unlockedAchievementsCount} / {totalAchievementsCount}
+            </button>
+          ) : (
+            <span className="font-semibold font-mono text-cyan-400">
+              {unlockedAchievementsCount} / {totalAchievementsCount}
+            </span>
+          )}
         </div>
       </div>
 

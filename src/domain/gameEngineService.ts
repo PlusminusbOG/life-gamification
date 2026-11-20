@@ -10,8 +10,15 @@ import type {
   QuestStatus,
   CreateQuestInput,
   CompleteQuestResult,
+  Achievement,
+  AchievementWithDetails,
 } from './types';
 import { calculateLevel } from './progression';
+import {
+  ACHIEVEMENT_DEFINITIONS,
+  evaluateAchievementState,
+  type AchievementEvaluationState,
+} from './achievementEngine';
 
 export interface GameEngineService {
   createActivity(input: CreateActivityInput): Promise<Activity>;
@@ -33,6 +40,11 @@ export interface GameEngineService {
   getQuest(id: string): Promise<Quest | undefined>;
   completeQuest(questId: string): Promise<CompleteQuestResult>;
   deleteQuest(id: string): Promise<void>;
+
+  // Тикет 04: Достижения
+  getAchievements(): Promise<AchievementWithDetails[]>;
+  getAchievementStats(): Promise<{ unlockedCount: number; totalCount: number }>;
+  evaluateAndSaveAchievements(): Promise<AchievementWithDetails[]>;
 }
 
 export function createGameEngineService(db: LifeGamificationDB): GameEngineService {
@@ -87,6 +99,59 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     return await db.activities.get(id);
   }
 
+  async function internalEvaluateAndSave(): Promise<AchievementWithDetails[]> {
+    const profile = await ensureProfile();
+    const activities = await db.activities.toArray();
+    const timeLogs = await db.timeLogs.toArray();
+    const completedQuests = await db.quests.where('status').equals('completed').toArray();
+
+    const evaluationState: AchievementEvaluationState = {
+      totalHours: profile.totalHours,
+      totalMinutes: profile.totalMinutes,
+      completedQuestsCount: completedQuests.length,
+      activities,
+      timeLogs,
+      completedQuests,
+    };
+
+    const existingList = await db.achievements.toArray();
+    const existingMap: Record<string, Achievement> = {};
+    for (const a of existingList) {
+      existingMap[a.code] = a;
+    }
+
+    const { evaluations } = evaluateAchievementState(evaluationState, existingMap);
+
+    const toPut: Achievement[] = evaluations.map((ev) => {
+      const prev = existingMap[ev.code];
+      return {
+        id: prev?.id || crypto.randomUUID(),
+        code: ev.code,
+        unlockedAt: ev.unlockedAt,
+        progress: ev.currentProgress,
+      };
+    });
+
+    await db.achievements.bulkPut(toPut);
+
+    return toPut.map((a) => {
+      const def = ACHIEVEMENT_DEFINITIONS.find((d) => d.code === a.code)!;
+      const progressPercent = Math.min(100, Math.round((a.progress / def.maxProgress) * 100));
+      return {
+        ...a,
+        title: def.title,
+        titleEn: def.titleEn,
+        description: def.description,
+        category: def.category,
+        categoryTitle: def.categoryTitle,
+        icon: def.icon,
+        maxProgress: def.maxProgress,
+        isSecret: def.isSecret,
+        progressPercent,
+      };
+    });
+  }
+
   async function logTime(
     inputOrActivityId: LogTimeInput | string,
     durationMinutesArg?: number,
@@ -124,7 +189,7 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
       createdAt: now,
     };
 
-    await db.transaction('rw', [db.activities, db.timeLogs, db.userProfile], async () => {
+    await db.transaction('rw', [db.activities, db.timeLogs, db.userProfile, db.achievements, db.quests], async () => {
       const activity = await db.activities.get(activityId);
       if (!activity) {
         throw new Error(`Занятие не найдено: ${activityId} (activity not found)`);
@@ -153,6 +218,9 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
         totalHours: updatedTotalHours,
         updatedAt: now,
       });
+
+      // 4. Декларативная оценка достижений внутри транзакции
+      await internalEvaluateAndSave();
     });
 
     return newLog;
@@ -240,7 +308,7 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     let updatedQuest: Quest;
     let createdTimeLog: TimeLog | undefined;
 
-    await db.transaction('rw', [db.quests, db.activities, db.timeLogs, db.userProfile], async () => {
+    await db.transaction('rw', [db.quests, db.activities, db.timeLogs, db.userProfile, db.achievements], async () => {
       const quest = await db.quests.get(questId);
       if (!quest) {
         throw new Error(`Квест не найден: ${questId}`);
@@ -294,6 +362,9 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
         completedAt: now,
       };
       await db.quests.put(updatedQuest);
+
+      // 4. Декларативная оценка достижений внутри транзакции
+      await internalEvaluateAndSave();
     });
 
     return { quest: updatedQuest!, timeLog: createdTimeLog };
@@ -301,6 +372,52 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
 
   async function deleteQuest(id: string): Promise<void> {
     await db.quests.delete(id);
+  }
+
+  // ==========================================================================
+  // Достижения (Ticket 04)
+  // ==========================================================================
+
+  async function evaluateAndSaveAchievements(): Promise<AchievementWithDetails[]> {
+    return await internalEvaluateAndSave();
+  }
+
+  // Чистое чтение для useLiveQuery (без записи во время live-запроса)
+  async function getAchievements(): Promise<AchievementWithDetails[]> {
+    const list = await db.achievements.toArray();
+    const map = new Map(list.map((a) => [a.code, a]));
+
+    return ACHIEVEMENT_DEFINITIONS.map((def) => {
+      const saved = map.get(def.code);
+      const progress = saved?.progress ?? 0;
+      const unlockedAt = saved?.unlockedAt ?? null;
+      const progressPercent = Math.min(100, Math.round((progress / def.maxProgress) * 100));
+
+      return {
+        id: saved?.id ?? def.code,
+        code: def.code,
+        unlockedAt,
+        progress,
+        title: def.title,
+        titleEn: def.titleEn,
+        description: def.description,
+        category: def.category,
+        categoryTitle: def.categoryTitle,
+        icon: def.icon,
+        maxProgress: def.maxProgress,
+        isSecret: def.isSecret,
+        progressPercent,
+      };
+    });
+  }
+
+  async function getAchievementStats(): Promise<{ unlockedCount: number; totalCount: number }> {
+    const all = await getAchievements();
+    const unlocked = all.filter((a) => a.unlockedAt != null).length;
+    return {
+      unlockedCount: unlocked,
+      totalCount: all.length,
+    };
   }
 
   return {
@@ -316,5 +433,8 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     getQuest,
     completeQuest,
     deleteQuest,
+    getAchievements,
+    getAchievementStats,
+    evaluateAndSaveAchievements,
   };
 }

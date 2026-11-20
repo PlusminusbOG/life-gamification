@@ -10,12 +10,14 @@ import {
   Layers,
   Award,
 } from 'lucide-react';
-import type { Quest, Activity } from '../domain/types';
+import type { Quest, Activity, AchievementWithDetails } from '../domain/types';
 import { FocusStopwatch } from './FocusStopwatch';
+import { TempleOfAchievements } from './TempleOfAchievements';
 
 interface ParchmentQuestLogProps {
   quests: Quest[];
   activities: Activity[];
+  achievements?: AchievementWithDetails[];
   onCompleteQuest: (questId: string) => Promise<void>;
   onDeleteQuest: (questId: string) => Promise<void>;
   onOpenCreateQuest: (defaultIsToday: boolean) => void;
@@ -24,19 +26,31 @@ interface ParchmentQuestLogProps {
     durationMinutes: number;
     notes?: string;
   }) => Promise<void>;
+  activeTab?: 'today' | 'backlog' | 'stopwatch' | 'temple';
+  onTabChange?: (tab: 'today' | 'backlog' | 'stopwatch' | 'temple') => void;
   className?: string;
 }
 
 export const ParchmentQuestLog: React.FC<ParchmentQuestLogProps> = ({
   quests,
   activities,
+  achievements = [],
   onCompleteQuest,
   onDeleteQuest,
   onOpenCreateQuest,
   onSaveStopwatchTime,
+  activeTab: activeTabProp,
+  onTabChange,
   className = '',
 }) => {
-  const [activeTab, setActiveTab] = useState<'today' | 'backlog' | 'stopwatch'>('today');
+  const [internalTab, setInternalTab] = useState<'today' | 'backlog' | 'stopwatch' | 'temple'>('today');
+  const activeTab = activeTabProp ?? internalTab;
+
+  const setActiveTab = (tab: 'today' | 'backlog' | 'stopwatch' | 'temple') => {
+    setInternalTab(tab);
+    onTabChange?.(tab);
+  };
+
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [celebrationMessage, setCelebrationMessage] = useState<string | null>(null);
 
@@ -62,6 +76,7 @@ export const ParchmentQuestLog: React.FC<ParchmentQuestLogProps> = ({
 
   const activeQuestsToDisplay = activeTab === 'today' ? todayQuests : backlogQuests;
   const currentActiveCount = activeQuestsToDisplay.filter((q) => q.status === 'active').length;
+  const unlockedAchCount = achievements.filter((a) => a.unlockedAt != null).length;
 
   const handleComplete = async (quest: Quest) => {
     try {
@@ -97,7 +112,7 @@ export const ParchmentQuestLog: React.FC<ParchmentQuestLogProps> = ({
     >
       {/* Шапка вкладок (Свиток походов) */}
       <div className="flex items-center justify-between border-b-2 border-slate-800 pb-3 mb-6 gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <button
             onClick={() => setActiveTab('today')}
             className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
@@ -143,9 +158,26 @@ export const ParchmentQuestLog: React.FC<ParchmentQuestLogProps> = ({
             <Timer className="w-4 h-4 text-amber-400" />
             <span>Секундомер</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('temple')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === 'temple'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <span>🏛️</span>
+            <span>Храм Достижений</span>
+            {achievements.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/30 text-amber-300 font-bold">
+                {unlockedAchCount}/{achievements.length}
+              </span>
+            )}
+          </button>
         </div>
 
-        {activeTab !== 'stopwatch' && (
+        {activeTab !== 'stopwatch' && activeTab !== 'temple' && (
           <button
             onClick={() => onOpenCreateQuest(activeTab === 'today')}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-md shadow-amber-500/20 active:scale-95 transition-all ml-auto"
@@ -165,7 +197,9 @@ export const ParchmentQuestLog: React.FC<ParchmentQuestLogProps> = ({
       )}
 
       {/* Контент активной вкладки */}
-      {activeTab === 'stopwatch' ? (
+      {activeTab === 'temple' ? (
+        <TempleOfAchievements achievements={achievements} />
+      ) : activeTab === 'stopwatch' ? (
         <FocusStopwatch
           activities={activities}
           onSaveTime={onSaveStopwatchTime}
