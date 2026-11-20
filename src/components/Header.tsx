@@ -1,14 +1,15 @@
 import React from 'react';
-import { Shield, Hourglass, Sparkles, Award } from 'lucide-react';
+import { Shield, Hourglass, Sparkles, Award, Database } from 'lucide-react';
 import type { UserProfile } from '../domain/types';
 import { calculateLevel, getPantheonTier } from '../domain/progression';
 
 interface HeaderProps {
   profile?: UserProfile;
   totalActivities: number;
+  onOpenBackup?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ profile, totalActivities }) => {
+export const Header: React.FC<HeaderProps> = ({ profile, totalActivities, onOpenBackup }) => {
   const totalHours = profile?.totalHours ?? 0;
   const totalMinutes = profile?.totalMinutes ?? Math.round(totalHours * 60);
   const heroLevel = calculateLevel(totalMinutes);
@@ -68,27 +69,41 @@ export const Header: React.FC<HeaderProps> = ({ profile, totalActivities }) => {
           </div>
         </div>
 
-        {/* Пожизненный накопительный счетчик часов */}
-        <div className="flex items-center gap-6 bg-slate-950/60 border border-slate-800 rounded-2xl px-5 py-3 shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-              <Hourglass className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <div className="text-xs font-medium uppercase tracking-wider text-slate-400">
-                Пожизненные часы
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono tracking-tight">
-                {totalHours.toFixed(1)} <span className="text-xs font-normal text-slate-500">ч</span>
-              </div>
-            </div>
-          </div>
+        {/* Пожизненный накопительный счетчик часов + Кнопка бекапа */}
+        <div className="flex items-center gap-3 self-stretch md:self-auto justify-between md:justify-end">
+          {onOpenBackup && (
+            <button
+              onClick={onOpenBackup}
+              title="Резервное копирование и суверенитет данных"
+              data-testid="header-backup-button"
+              className="inline-flex items-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-bold text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer shadow-lg active:scale-95"
+            >
+              <Database className="w-4 h-4 text-amber-400" />
+              <span>Бекап</span>
+            </button>
+          )}
 
-          <div className="hidden sm:block w-px h-10 bg-slate-800" />
+          <div className="flex items-center gap-6 bg-slate-950/60 border border-slate-800 rounded-2xl px-5 py-3 shadow-lg flex-1 md:flex-initial justify-between md:justify-start">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                <Hourglass className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                  Пожизненные часы
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono tracking-tight">
+                  {totalHours.toFixed(1)} <span className="text-xs font-normal text-slate-500">ч</span>
+                </div>
+              </div>
+            </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-emerald-400/90 font-medium bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
-            <Award className="w-4 h-4" />
-            <span>Вечные и несгораемые</span>
+            <div className="hidden sm:block w-px h-10 bg-slate-800" />
+
+            <div className="hidden sm:flex items-center gap-2 text-xs text-emerald-400/90 font-medium bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
+              <Award className="w-4 h-4" />
+              <span>Вечные и несгораемые</span>
+            </div>
           </div>
         </div>
       </div>

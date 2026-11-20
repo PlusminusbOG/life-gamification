@@ -12,12 +12,16 @@ import { CreateActivityModal } from './components/CreateActivityModal';
 import { CreateQuestModal } from './components/CreateQuestModal';
 import { LogTimeModal } from './components/LogTimeModal';
 import { RecentLogsList } from './components/RecentLogsList';
+import { ExportHeroCardModal } from './components/ExportHeroCardModal';
+import { BackupModal } from './components/BackupModal';
 
 const gameService = createGameEngineService(db);
 
 export function App() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreateQuestOpen, setIsCreateQuestOpen] = useState(false);
+  const [isExportHeroCardOpen, setIsExportHeroCardOpen] = useState(false);
+  const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [createQuestDefaultIsToday, setCreateQuestDefaultIsToday] = useState(true);
   const [selectedActivityForLog, setSelectedActivityForLog] = useState<Activity | null>(null);
   const [questLogTab, setQuestLogTab] = useState<'today' | 'backlog' | 'stopwatch' | 'temple'>('today');
@@ -75,7 +79,11 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
       {/* Шапка героя */}
-      <Header profile={profile} totalActivities={activities.length} />
+      <Header
+        profile={profile}
+        totalActivities={activities.length}
+        onOpenBackup={() => setIsBackupOpen(true)}
+      />
 
       {/* Основной контейнер: Сетка Variant B (Карточка Героя слева + Свиток квестов и активности справа) */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -89,6 +97,7 @@ export function App() {
               unlockedAchievementsCount={unlockedAchCount}
               totalAchievementsCount={achievements.length || 13}
               onOpenTemple={() => setQuestLogTab('temple')}
+              onExportHeroCard={() => setIsExportHeroCardOpen(true)}
             />
           </aside>
 
@@ -170,10 +179,13 @@ export function App() {
 
       {/* Подвал */}
       <footer className="border-t border-slate-800/60 py-6 px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-center gap-2">
-        <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+        <button
+          onClick={() => setIsBackupOpen(true)}
+          className="flex items-center gap-1.5 text-slate-400 hover:text-amber-400 font-medium transition-colors cursor-pointer"
+        >
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Локальная база IndexedDB (работает офлайн)</span>
-        </div>
+          <span>Локальная база IndexedDB (Резервная копия и экспорт)</span>
+        </button>
         <span className="hidden sm:inline text-slate-700">•</span>
         <span>Геймификация Жизни — Храм Достижений Олимпа</span>
       </footer>
@@ -198,6 +210,27 @@ export function App() {
         isOpen={selectedActivityForLog !== null}
         onClose={() => setSelectedActivityForLog(null)}
         onLogTime={handleLogTime}
+      />
+
+      <ExportHeroCardModal
+        isOpen={isExportHeroCardOpen}
+        onClose={() => setIsExportHeroCardOpen(false)}
+        profile={profile}
+        activities={activities}
+        achievements={achievements}
+        initialPinnedCodes={profile?.pinnedBadgeCodes}
+        onSavePinnedCodes={async (codes) => {
+          await gameService.updatePinnedBadges(codes);
+        }}
+      />
+
+      <BackupModal
+        isOpen={isBackupOpen}
+        onClose={() => setIsBackupOpen(false)}
+        onRestoreSuccess={async () => {
+          await gameService.ensureProfile();
+          await gameService.evaluateAndSaveAchievements();
+        }}
       />
     </div>
   );

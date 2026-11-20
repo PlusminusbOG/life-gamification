@@ -28,6 +28,7 @@ export interface UserProfile {
   name: string; // Имя героя (по умолчанию "Герой Эллады")
   totalMinutes: number; // Накопленные минуты героя (исключает погрешность float)
   totalHours: number; // Накопленные пожизненные часы героя (никогда не уменьшаются)
+  pinnedBadgeCodes?: string[]; // Избранные регалии для карточки героя (до 5)
   createdAt: number; // Метка времени (мс)
   updatedAt: number; // Метка времени (мс)
 }

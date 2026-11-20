@@ -87,4 +87,25 @@ describe('Variant B HeroCharacterSheet & XPProgressBar Component Rendering', () 
     expect(html).toContain('УРОВЕНЬ 101');
     expect(html).toContain('350.0 ч');
   });
+
+  it('renders export hero card button when onExportHeroCard callback is passed', () => {
+    const mockProfile: UserProfile = {
+      id: 'me',
+      name: 'Тесей',
+      totalMinutes: 120,
+      totalHours: 2.0,
+      createdAt: 1000,
+      updatedAt: 1000,
+    };
+
+    const html = renderClean(
+      <HeroCharacterSheet
+        profile={mockProfile}
+        onExportHeroCard={() => {}}
+      />
+    );
+
+    expect(html).toContain('export-hero-card-button');
+    expect(html).toContain('Экспорт карточки героя');
+  });
 });

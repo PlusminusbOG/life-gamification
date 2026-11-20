@@ -45,6 +45,10 @@ export interface GameEngineService {
   getAchievements(): Promise<AchievementWithDetails[]>;
   getAchievementStats(): Promise<{ unlockedCount: number; totalCount: number }>;
   evaluateAndSaveAchievements(): Promise<AchievementWithDetails[]>;
+
+  // Тикет 05: Избранные регалии
+  updatePinnedBadges(pinnedCodes: string[]): Promise<void>;
+  getPinnedBadges(): Promise<string[]>;
 }
 
 export function createGameEngineService(db: LifeGamificationDB): GameEngineService {
@@ -420,6 +424,24 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     };
   }
 
+  // ==========================================================================
+  // Избранные регалии (Ticket 05)
+  // ==========================================================================
+
+  async function updatePinnedBadges(pinnedCodes: string[]): Promise<void> {
+    const validCodes = pinnedCodes.slice(0, 5);
+    await ensureProfile();
+    await db.userProfile.update('me', {
+      pinnedBadgeCodes: validCodes,
+      updatedAt: Date.now(),
+    });
+  }
+
+  async function getPinnedBadges(): Promise<string[]> {
+    const profile = await ensureProfile();
+    return profile.pinnedBadgeCodes ?? [];
+  }
+
   return {
     createActivity,
     getActivities,
@@ -436,5 +458,7 @@ export function createGameEngineService(db: LifeGamificationDB): GameEngineServi
     getAchievements,
     getAchievementStats,
     evaluateAndSaveAchievements,
+    updatePinnedBadges,
+    getPinnedBadges,
   };
 }

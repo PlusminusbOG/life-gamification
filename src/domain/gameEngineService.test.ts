@@ -307,4 +307,24 @@ describe('GameEngineService (Primary Seam)', () => {
       expect(fetched).toBeUndefined();
     });
   });
+
+  describe('Pinned Badges Management (Ticket 05)', () => {
+    it('persists up to 5 pinned badge codes in userProfile', async () => {
+      const initialBadges = await service.getPinnedBadges();
+      expect(initialBadges).toEqual([]);
+
+      const toPin = ['CRONUS_10H', 'HERACLES_1Q', 'ARIADNE_3D'];
+      await service.updatePinnedBadges(toPin);
+
+      const saved = await service.getPinnedBadges();
+      expect(saved).toEqual(toPin);
+
+      // Verify capping to 5
+      const sixCodes = ['1', '2', '3', '4', '5', '6'];
+      await service.updatePinnedBadges(sixCodes);
+      const capped = await service.getPinnedBadges();
+      expect(capped).toHaveLength(5);
+      expect(capped).toEqual(['1', '2', '3', '4', '5']);
+    });
+  });
 });

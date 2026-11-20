@@ -1,6 +1,6 @@
 # Spec: Life Gamification MVP
 
-Status: ready-for-agent
+Status: resolved
 Effort: life-gamification
 
 ## Problem Statement
