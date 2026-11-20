@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Hourglass, Sparkles, Award, Database } from 'lucide-react';
+import { Shield, Hourglass, Sparkles, Award, Database, Volume2, VolumeX } from 'lucide-react';
 import type { UserProfile } from '../domain/types';
 import { calculateLevel, getPantheonTier } from '../domain/progression';
 
@@ -7,9 +7,17 @@ interface HeaderProps {
   profile?: UserProfile;
   totalActivities: number;
   onOpenBackup?: () => void;
+  soundEnabled?: boolean;
+  onToggleSound?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ profile, totalActivities, onOpenBackup }) => {
+export const Header: React.FC<HeaderProps> = ({
+  profile,
+  totalActivities,
+  onOpenBackup,
+  soundEnabled = true,
+  onToggleSound,
+}) => {
   const totalHours = profile?.totalHours ?? 0;
   const totalMinutes = profile?.totalMinutes ?? Math.round(totalHours * 60);
   const heroLevel = calculateLevel(totalMinutes);
@@ -69,8 +77,23 @@ export const Header: React.FC<HeaderProps> = ({ profile, totalActivities, onOpen
           </div>
         </div>
 
-        {/* Пожизненный накопительный счетчик часов + Кнопка бекапа */}
-        <div className="flex items-center gap-3 self-stretch md:self-auto justify-between md:justify-end">
+        {/* Пожизненный накопительный счетчик часов + Кнопки действий */}
+        <div className="flex items-center gap-2.5 self-stretch md:self-auto justify-between md:justify-end">
+          {onToggleSound && (
+            <button
+              onClick={onToggleSound}
+              title={soundEnabled ? 'Звуковые эффекты включены (нажмите для выключения)' : 'Звуковые эффекты выключены'}
+              data-testid="header-sound-toggle"
+              className="inline-flex items-center justify-center p-3 rounded-2xl text-xs font-bold text-slate-300 hover:text-white bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer shadow-lg active:scale-95"
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4 text-amber-400" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-slate-500" />
+              )}
+            </button>
+          )}
+
           {onOpenBackup && (
             <button
               onClick={onOpenBackup}

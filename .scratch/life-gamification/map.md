@@ -6,13 +6,16 @@ Label: wayfinder:map
 
 Full architecture, domain model, and UI specification for an offline-first (Local-first) PWA life-gamification app with cumulative hours tracking, RPG leveling, quests, and permanent achievements. **Status: MVP 100% Implemented and Verified across all 6 tickets.**
 
-## Completed Tickets (MVP)
+## Completed Tickets (MVP + Post-MVP Enhancements)
 - ✅ **01: Project scaffolding and time logging**: Dexie v4 storage, atomic transactions, activity management, time logging with notes.
 - ✅ **02: Greek pantheon character sheet**: Variant B RPG Character Sheet, mathematical progression engine, pantheon tiers, XP progress bar.
 - ✅ **03: Custom quests and focus stopwatch**: Parchment quest log (today/backlog), custom quest creation with XP rewards (+15..+120m), integrated focus stopwatch.
 - ✅ **04: Declarative achievement engine and temple of achievements**: Predicate evaluation engine, 5 Greek categories, secret mystery cards, permanent non-degrading records.
 - ✅ **05: Badge showcase and hero card export**: 1200x630 Retina PNG card generator, badge showcase selector (max 5), real-time preview, one-click download.
 - ✅ **06: Lossless JSON backup export/import and offline PWA packaging**: Full database dump/restore with replace/merge conflict modes, PWA manifest, offline service worker, 100% round-trip fidelity.
+- ✅ **07: Activity heatmap calendar**: GitHub-style year productivity matrix, Greek gold intensity tiers, interactive day tooltip breakdown, activity filtering, streaks.
+- ✅ **08: Celebratory micro-interactions, confetti, and Web Audio effects**: canvas-confetti fireworks for level-up and quests, zero-latency Web Audio API synthesized fanfares and chimes, mute/unmute audio toggle.
+- ✅ **09: Free deployment and sharing configuration**: GitHub Pages workflow (`.github/workflows/deploy.yml`), subpath compatibility (`base: './'`), and comprehensive deployment guide (`docs/DEPLOYMENT.md`).
 
 ## Notes
 
@@ -35,7 +38,6 @@ Full architecture, domain model, and UI specification for an offline-first (Loca
 ## Not yet specified
 
 - **Cloud Sync Strategy**: Multi-device synchronization protocol (CRDT vs CouchDB/Supabase) when syncing across devices in a future phase.
-- **Sound & Micro-interactions**: Audio feedback, celebration confetti, and haptic feedback triggers upon quest completion or level up.
 - **Pomodoro & Focus Intervals**: Break interval configuration, system notifications, and sound alerts for the focus timer.
 - **Custom User Achievements**: Allowing users to create their own custom milestones and rules beyond system presets.
 

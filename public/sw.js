@@ -6,14 +6,14 @@
 const CACHE_NAME = 'life-gamification-v1';
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/manifest.json',
-  '/favicon.svg',
-  '/icons/icon.svg',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg',
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './manifest.json',
+  './favicon.svg',
+  './icons/icon.svg',
+  './icons/icon-192.svg',
+  './icons/icon-512.svg',
 ];
 
 // Установка: предварительное кэширование базового shell приложения
@@ -63,7 +63,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          return caches.match('/index.html').then((cached) => cached || caches.match('/'));
+          return caches.match('./index.html').then((cached) => cached || caches.match('./'));
         })
     );
     return;

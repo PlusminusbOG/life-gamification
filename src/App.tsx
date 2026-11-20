@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Sparkles, Compass, ShieldCheck } from 'lucide-react';
 import { db } from './domain/db';
 import { createGameEngineService } from './domain/gameEngineService';
+import { calculateLevel } from './domain/progression';
+import { isSoundEnabled, setSoundEnabled } from './domain/soundService';
+import {
+  triggerQuestCompleteCelebration,
+  triggerLevelUpCelebration,
+} from './domain/celebration';
 import type { Activity, CreateActivityInput, CreateQuestInput } from './domain/types';
 import { Header } from './components/Header';
 import { HeroCharacterSheet } from './components/HeroCharacterSheet';
@@ -14,6 +20,7 @@ import { LogTimeModal } from './components/LogTimeModal';
 import { RecentLogsList } from './components/RecentLogsList';
 import { ExportHeroCardModal } from './components/ExportHeroCardModal';
 import { BackupModal } from './components/BackupModal';
+import { ActivityHeatmap } from './components/ActivityHeatmap';
 
 const gameService = createGameEngineService(db);
 
@@ -22,9 +29,12 @@ export function App() {
   const [isCreateQuestOpen, setIsCreateQuestOpen] = useState(false);
   const [isExportHeroCardOpen, setIsExportHeroCardOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [soundEnabled, setSoundEnabledState] = useState(() => isSoundEnabled());
   const [createQuestDefaultIsToday, setCreateQuestDefaultIsToday] = useState(true);
   const [selectedActivityForLog, setSelectedActivityForLog] = useState<Activity | null>(null);
   const [questLogTab, setQuestLogTab] = useState<'today' | 'backlog' | 'stopwatch' | 'temple'>('today');
+
+  const prevLevelRef = useRef<number | null>(null);
 
   // Живые запросы из IndexedDB (Dexie)
   const profile = useLiveQuery(() => db.userProfile.get('me'));
@@ -43,6 +53,23 @@ export function App() {
     gameService.ensureProfile().catch(console.error);
     gameService.evaluateAndSaveAchievements().catch(console.error);
   }, []);
+
+  // Отслеживание повышения уровня и запуск триумфальной фанфары с конфетти
+  useEffect(() => {
+    if (profile?.totalMinutes !== undefined) {
+      const currentLevel = calculateLevel(profile.totalMinutes);
+      if (prevLevelRef.current !== null && currentLevel > prevLevelRef.current) {
+        triggerLevelUpCelebration();
+      }
+      prevLevelRef.current = currentLevel;
+    }
+  }, [profile?.totalMinutes]);
+
+  const handleToggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    setSoundEnabledState(next);
+  };
 
   const handleCreateActivity = async (input: CreateActivityInput) => {
     await gameService.createActivity(input);
@@ -63,6 +90,7 @@ export function App() {
 
   const handleCompleteQuest = async (questId: string) => {
     await gameService.completeQuest(questId);
+    triggerQuestCompleteCelebration();
   };
 
   const handleDeleteQuest = async (questId: string) => {
@@ -83,6 +111,8 @@ export function App() {
         profile={profile}
         totalActivities={activities.length}
         onOpenBackup={() => setIsBackupOpen(true)}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
       />
 
       {/* Основной контейнер: Сетка Variant B (Карточка Героя слева + Свиток квестов и активности справа) */}
@@ -116,6 +146,11 @@ export function App() {
                 activeTab={questLogTab}
                 onTabChange={setQuestLogTab}
               />
+            </section>
+
+            {/* Летопись подвигов: Календарная тепловая карта (GitHub Heatmap) */}
+            <section>
+              <ActivityHeatmap timeLogs={timeLogs} activities={activities} />
             </section>
 
             {/* Заголовок раздела активностей */}
