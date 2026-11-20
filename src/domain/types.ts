@@ -40,9 +40,28 @@ export type PantheonTier =
   | 'Олимпиец'
   | 'Восходящий Бог';
 
+export type PantheonTierEn =
+  | 'Mortal'
+  | 'Hero of Hellas'
+  | 'Demigod'
+  | 'Titan of Will'
+  | 'Olympian'
+  | 'Ascendant God';
+
+export type PantheonTierCode =
+  | 'mortal'
+  | 'hero'
+  | 'demigod'
+  | 'titan'
+  | 'olympian'
+  | 'god';
+
 export interface PantheonTierInfo {
   tier: PantheonTier;
+  tierEn: PantheonTierEn;
+  tierCode: PantheonTierCode;
   title: string;
+  titleEn: string;
   minLevel: number;
   maxLevel: number;
 }
