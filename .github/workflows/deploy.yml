@@ -32,22 +32,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.15.4 --activate
-          pnpm --version
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm install
 
-      - name: Run typecheck and tests
+      - name: Run tests and build
         run: |
-          pnpm typecheck
-          pnpm test
-
-      - name: Build production bundle
-        run: pnpm build
+          npm test
+          npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
